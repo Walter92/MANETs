@@ -8,13 +8,15 @@ public class Message implements Serializable{
      * 数据序列号，如果收到的数据小于或者等于节点存储的序列号时，则抛弃该数据，不做处理，避免形成广播风暴
      *比如说A节点广播了某一次路由请求，B节点收到该请求再次广播，则A节点就会收到该广播，所以通过该属性来判断这次数据帧是同一次广播，进而不做理会
      */
-    private int dataSeq;
+    private int seqNum;
     //数据类型
     private int type;
     //源节点的IP
     private String srcIP;
     //目的节点的IP
     private String destIP;
+    //转发节点的IP
+    private String routeIP;
     //发送的数据长度
     private int dataLen = 0;
     //系统信息，包含了处理器个数以及内存大小
@@ -26,13 +28,22 @@ public class Message implements Serializable{
     public Message() {
     }
 
-    public Message(int dataSeq, int type, String srcIP, String destIP, SystemInfo systemInfo, int hop) {
-        this.dataSeq = dataSeq;
+    public Message(int seqNum, int type, String srcIP, String routeIP,String destIP, SystemInfo systemInfo, int hop) {
+        this.seqNum = seqNum;
         this.type = type;
         this.srcIP = srcIP;
+        this.routeIP=routeIP;
         this.destIP = destIP;
         this.systemInfo = systemInfo;
         this.hop = hop;
+    }
+
+    public String getRouteIP() {
+        return routeIP;
+    }
+
+    public void setRouteIP(String routeIP) {
+        this.routeIP = routeIP;
     }
 
     public int getHop() {
@@ -51,12 +62,12 @@ public class Message implements Serializable{
         this.datagram = datagram;
     }
 
-    public int getDataSeq() {
-        return dataSeq;
+    public int getSeqNum() {
+        return seqNum;
     }
 
-    public void setDataSeq(int dataSeq) {
-        this.dataSeq = dataSeq;
+    public void setSeqNum(int seqNum) {
+        this.seqNum = seqNum;
     }
 
     public int getType() {

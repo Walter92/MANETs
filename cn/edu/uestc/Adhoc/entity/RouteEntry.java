@@ -33,14 +33,6 @@ public class RouteEntry {
     //在这个时间内，该表项有效
     private int Lifetime;
 
-    public RouteEntry(String destIP, StateFlags state, int lifetime) {
-        DestIP = destIP;
-        State = state;
-        Lifetime = lifetime;
-
-        SeqNum = 0;
-        HopCount = 0;
-    }
 
     public RouteEntry(String destIP, int seqNum, StateFlags state, int hopCount, String nextHopIP, int lifetime) {
         DestIP = destIP;

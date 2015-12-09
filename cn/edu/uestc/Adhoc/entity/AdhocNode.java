@@ -23,10 +23,6 @@ public class AdhocNode implements IAdhocNode {
     @SuppressWarnings("rawtypes")
     public static Enumeration portList;
 
-    //要发送的数据和接收到的数据
-    public static String messageForSend;
-    public static String messageForRece;
-
     //串口输入输出流
     private InputStream is;
     private OutputStream os;
@@ -34,15 +30,10 @@ public class AdhocNode implements IAdhocNode {
     // 节点IP地址和节点端口名字
     private String ip;
     private String portName;
-
+    //节点发出的序列号，该节点每发送出一次RREQ或者RREP时都会在该寻列号上加一，用以标识这是否是一次新的路由请求或者路由回复
+    private int seqNum;
     //节点的路由表
     private Map<String, RouteEntry> routeTable = new HashMap<String, RouteEntry>();
-    //到某一目的节点的序列号，表示这是对某一节点发出了多少次请求
-    //String格式为(srcIP,destIP),表示某源节点对某目的节点发出了几次请求
-    private Map<String,Integer> seqNumMapRREQ=new HashMap<String, Integer>();
-    //到某一目的节点的序列号，表示这是对某一节点发出了多少次响应
-    //String格式为(srcIP,destIP),表示某源节点对某目的节点发出了几次响应
-    private Map<String,Integer> seqNumMapRREP=new HashMap<String, Integer>();
     // 节点的处理器个数以及最大内存
     private SystemInfo systemInfo;
 
@@ -82,6 +73,7 @@ public class AdhocNode implements IAdhocNode {
     public AdhocNode(String portName) {
         // 设置通信的串口
         this.portName = portName;
+        this.seqNum=1;
         try {
             init();
         } catch (Exception e) {
@@ -145,14 +137,10 @@ public class AdhocNode implements IAdhocNode {
 
     @Override
     public void sendRREQ(String destIP) {
-        //如果从来为向该目的节点发出过RREQ则新建一个键值对
-        String key=ip+","+destIP;
-        if(!seqNumMapRREQ.containsKey(key)) {
-            seqNumMapRREQ.put(key, 1);
-        }
         System.out.println("节点"+getIp()+"对节点"+destIP
-                +"发起路由...");
-        Message message=new Message(seqNumMapRREQ.get(destIP),IAdhocNode.RREQ,getIp(),
+                +"发起路由请求...");
+        //本节点对目标节点发出一次RREQ，发出后把seqNum参数加一，以便下次在发出RREQ时为最新请求
+        Message message=new Message(seqNum++,IAdhocNode.RREQ,ip,ip,
                 destIP, systemInfo,0);
         try {
             Thread t=new Thread(new SerialWriteThread(os,message));
@@ -169,52 +157,122 @@ public class AdhocNode implements IAdhocNode {
         }
     }
 
-
+    /**
+     *
+     * @param message
+     * 收到的信息对象
+     * 首先判断本机路由表中是否有该信息中源地址的表项，如果有并且比收到的信息中的序列号大，则丢弃该信息不做处理
+     * 否则新建一个路由表项，以源地址为键，如果是直接收到源节点的请求，信息中转发节点就是源节点，可以直接用于建立去往源节点
+     * 的下一跳节点，建立反向路由
+     */
     @Override
     public void receiveRREQ(Message message) {
         System.out.println("节点"+getIp()+"收到节点"+message.getSrcIP()
                 +"对节点"+message.getDestIP()+"发起的路由请求，正在处理中...");
-        String key=message.getSrcIP()+","+message.getDestIP();
+        String key=message.getSrcIP();
         //如果收到的信息里面，请求的序列号的键存在，并且小于等于本机所存，则抛弃
-        if(seqNumMapRREQ.containsKey(key)&&seqNumMapRREQ.get(key)>=message.getDataSeq()){
+        if(routeTable.containsKey(key)&&routeTable.get(key).getSeqNum()>=message.getSeqNum()){
             return;
+        }else{
+            //转发该信息节点是否为null
+            routeTable.put(key,new RouteEntry(key,message.getSeqNum(),StateFlags.VALID,message.getHop(),message.getRouteIP(),0));
         }
         //如果收到的信息中是寻找本机，则回复路由响应
         if(ip.equals(message.getDestIP())){
-            //如果是第一次对该节点回复路由请求，则新建条目,否则在原来的请求次数上加1
-            if(!seqNumMapRREP.containsKey(key)){
-                seqNumMapRREP.put(key,1);
-            }else{
-                seqNumMapRREP.put(key,seqNumMapRREP.get(key)+1);
-            }
-            //新建一个RREP信息回复
-            Message message1=new Message(seqNumMapRREP.get(key),IAdhocNode.RREP,ip,message.getSrcIP(),systemInfo,0);
+            Message message1=new Message(seqNum++,IAdhocNode.RREP,ip,ip,message.getSrcIP(),systemInfo,0);
             sendRREP(message1);
             return;
         }
-        //如果信息中不是在寻找本机，则给跳数加一后转发该请求
+        //如果信息中不是在寻找本机，则给跳数加一和更新转发节点ip后转发该请求
         message.setHop(message.getHop()+1);
+        message.setRouteIP(ip);
+        //转发
         forwardRREQ(message);
 
     }
 
     @Override
     public void forwardRREQ(Message message) {
-
+        System.out.println("节点"+ip+"转发节点"+message.getSrcIP()+"对节点"+message.getDestIP()
+                +"发起的路由请求...");
+        try {
+            Thread t=new Thread(new SerialWriteThread(os,message));
+            t.start();
+            //等待发送结束
+            t.join();
+            System.out.println("转发路由请求成功!");
+        } catch (IOException e) {
+            System.out.println("转发路由请求失败，发送线程创建失败!");
+        }catch (InterruptedException ie){
+            ie.printStackTrace();
+        }
     }
 
     @Override
     public void sendRREP(Message message) {
-
+        System.out.println("节点"+ip+"回复节点"+message.getDestIP()
+                +"发起的对本节点的路由请求...");
+        try {
+            Thread t=new Thread(new SerialWriteThread(os,message));
+            t.start();
+            //等待发送结束
+            t.join();
+            System.out.println("路由回复成功!");
+        } catch (IOException e) {
+            System.out.println("路由回复失败，发送线程创建失败!");
+        }catch (InterruptedException ie){
+            ie.printStackTrace();
+        }
     }
 
     @Override
     public void receiveRREP(Message message) {
-
+        System.out.println("节点"+ip+"收到节点"+message.getSrcIP()
+                +"对节点"+message.getDestIP()+"发起的路由回复，正在处理中...");
+        String key=message.getSrcIP();
+        //如果收到的信息里面，请求的序列号的键存在，并且小于等于本机所存，则抛弃
+        if(routeTable.containsKey(key)&&routeTable.get(key).getSeqNum()>=message.getSeqNum()){
+            return;
+        }else{
+            //转发该信息节点是否为null
+            routeTable.put(key,new RouteEntry(key,message.getSeqNum(),StateFlags.VALID,message.getHop(),message.getRouteIP(),0));
+        }
+        //如果收到的信息中是寻找本机，则回复路由响应
+        if(ip.equals(message.getDestIP())){
+           System.out.println("本节点发起的对节点"+message.getDestIP()+"的路由请求成功，收到该节点的路由回复，该节点系统信息如下为"+
+                message.getSystemInfo().toString());
+            return;
+        }
+        //如果信息中不是在寻找本机，则给跳数加一和更新转发节点ip后转发该请求
+        message.setHop(message.getHop()+1);
+        message.setRouteIP(ip);
+        //转发
+        forwardRREQ(message);
     }
 
     @Override
     public void forwardRREP(Message message) {
+        System.out.println("节点"+ip+"转发节点"+message.getSrcIP()+"对节点"+message.getDestIP()
+                +"的路由回复...");
+        try {
+            Thread t=new Thread(new SerialWriteThread(os,message));
+            t.start();
+            //等待发送结束
+            t.join();
+            System.out.println("转发路由回复成功!");
+        } catch (IOException e) {
+            System.out.println("转发路由回复失败，发送线程创建失败!");
+        }catch (InterruptedException ie){
+            ie.printStackTrace();
+        }
+    }
 
+    @Override
+    public void dispatch(Message message) {
+        int type=message.getType();
+        switch (type){
+            case IAdhocNode.RREQ: receiveRREQ(message);break;
+            case IAdhocNode.RREP:receiveRREP(message);break;
+        }
     }
 }

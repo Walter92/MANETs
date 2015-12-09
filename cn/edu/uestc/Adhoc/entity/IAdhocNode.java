@@ -21,4 +21,6 @@ public interface IAdhocNode {
     void receiveRREP(Message message);
     //转发路由响应RREP
     void forwardRREP(Message message);
+    //信息分发，当收到一个数据帧时判断该数据帧的类型然后在交给对应的处理程序
+    void dispatch(Message message);
 }
