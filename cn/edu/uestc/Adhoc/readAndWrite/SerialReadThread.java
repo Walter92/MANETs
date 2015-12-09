@@ -67,7 +67,6 @@ public class SerialReadThread implements Runnable, SerialPortEventListener {
 				System.out.print("收到数据:");
                 String message=new String(buf,0,numBytes);
 				System.out.println(message);
-
 			} catch (IOException e) {
 				e.printStackTrace();
 			} 

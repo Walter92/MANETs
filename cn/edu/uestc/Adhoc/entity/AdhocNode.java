@@ -234,20 +234,19 @@ public class AdhocNode implements IAdhocNode {
         if(routeTable.containsKey(key)&&routeTable.get(key).getSeqNum()>=message.getSeqNum()){
             return;
         }else{
-            //转发该信息节点是否为null
             routeTable.put(key,new RouteEntry(key,message.getSeqNum(),StateFlags.VALID,message.getHop(),message.getRouteIP(),0));
         }
         //如果收到的信息中是寻找本机，则回复路由响应
         if(ip.equals(message.getDestIP())){
-           System.out.println("本节点发起的对节点"+message.getDestIP()+"的路由请求成功，收到该节点的路由回复，该节点系统信息如下为"+
+           System.out.println("本节点发起的对节点"+message.getDestIP()+"的路由请求成功，收到该节点的路由回复，该节点系统信息如下为,"+
                 message.getSystemInfo().toString());
             return;
         }
-        //如果信息中不是在寻找本机，则给跳数加一和更新转发节点ip后转发该请求
+        //如果信息中不是回复寻找本机，则给跳数加一和更新转发节点ip后转发该请求
         message.setHop(message.getHop()+1);
         message.setRouteIP(ip);
         //转发
-        forwardRREQ(message);
+        forwardRREP(message);
     }
 
     @Override
