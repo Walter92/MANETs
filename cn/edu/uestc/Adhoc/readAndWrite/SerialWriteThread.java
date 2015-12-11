@@ -3,7 +3,6 @@ package cn.edu.uestc.Adhoc.readAndWrite;
 import cn.edu.uestc.Adhoc.entity.Message;
 
 import java.io.*;
-import java.util.Objects;
 
 public class SerialWriteThread implements Runnable {
 

@@ -34,7 +34,7 @@ public class RouteEntry {
     private int Lifetime;
 
 
-    public RouteEntry(String destIP, int seqNum, StateFlags state, int hopCount, String nextHopIP, int lifetime) {
+    public RouteEntry(String destIP, String nextHopIP,int seqNum, StateFlags state, int hopCount,  int lifetime) {
         DestIP = destIP;
         SeqNum = seqNum;
         State = state;
