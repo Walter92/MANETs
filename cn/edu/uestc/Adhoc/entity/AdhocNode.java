@@ -16,6 +16,13 @@ import gnu.io.PortInUseException;
 import gnu.io.SerialPort;
 import gnu.io.UnsupportedCommOperationException;
 
+/**
+ * 系统信息的记录暂时还没有得到利用。
+ * 初始想法：从一个节点到另一个节点会经过多个节点是吧？所以整个路由路径上性能最低的节点就是木桶中最低的一块木板，所以只要记录
+ * 路径中性能最差的一个节点的信息，就可以知道这条路径上能发送多大的数据。因此在转发路由请求的过程中，每一个节点检查请求中的消
+ * 息中的最低节点性能信息，通过和自身比较，如果自身低于该性能，则重新设置最低性能信息，之后再转发出去。ps：路由请求信息应该还
+ * 要增加一个字段来描述整个路由路径中最低节点的性能信息。
+ */
 public class AdhocNode implements IAdhocNode {
 
     public static SerialPort serialPort;
@@ -305,7 +312,6 @@ public class AdhocNode implements IAdhocNode {
         MessageData message=new MessageData();
         message.setDestIP(destIP);
         message.setSrcIP(ip);
-        message.setSeqNum(seqNum++);
         message.setNextIP(routeEntry.getNextHopIP());
         message.setContent("hello".getBytes());
         try {
@@ -323,7 +329,7 @@ public class AdhocNode implements IAdhocNode {
 
     @Override
     public void receiveDATA(MessageData messageData) {
-
+        //收到数据类型的信息时不需要检查序列号
         String nextIP=messageData.getNextIP();
         if(!nextIP.equals(ip))
             return;
@@ -332,13 +338,18 @@ public class AdhocNode implements IAdhocNode {
         if(destIP.equals(ip)){
             System.out.println("本节点收到来自" + messageData.getSrcIP()
                     + "的数据，" + "内容为：" + new String(messageData.getContent()));
+            return;
         }
-
+        //查询本节点的路由表，得到去往目的节点的下一跳节点，并改变消息中的下一跳节点地址后转发出去
         String next=queryRouteTable(destIP).getNextHopIP();
         messageData.setNextIP(next);
         forwardDATA(messageData);
     }
 
+    /**
+     * 这个几个forwardXXXX方法的日志记录完全可以用AOP实现，采用动态代理即可，但是劳资现在不想干！！！！
+     * @param messageData
+     */
     @Override
     public void forwardDATA(MessageData messageData) {
         System.out.println("节点"+ip+"转发节点"+ messageData.getSrcIP()+"对节点"+ messageData.getDestIP()
