@@ -12,20 +12,23 @@ public class SerialWriteThread implements Runnable {
     private ObjectOutputStream objectOutputStream;
     private Message message;
 
-    public SerialWriteThread(OutputStream os, Message message) throws  IOException{
+    public SerialWriteThread( OutputStream os,Message message) throws  IOException{
         this.os = os;
         this.bos = new BufferedOutputStream(this.os);
         objectOutputStream = new ObjectOutputStream(os);
         this.message = message;
     }
-
+    public SerialWriteThread(OutputStream os){
+        this.os = os;
+        this.bos = new BufferedOutputStream(this.os);
+    }
     @Override
     public void run() {
         System.out.println("开始发送数据...");
         while (true) {
             try {
-                bos.write("hello".getBytes());
-                bos.flush();
+//                bos.write("hello".getBytes());
+//                bos.flush();
                 objectOutputStream.writeObject(message);
                 objectOutputStream.flush();
                 Thread.sleep(1000);

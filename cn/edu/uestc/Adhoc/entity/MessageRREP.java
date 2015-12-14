@@ -1,6 +1,8 @@
 package cn.edu.uestc.Adhoc.entity;
 
-public class MessageRREP extends Message {
+import java.io.Serializable;
+
+public class MessageRREP extends Message implements Serializable{
     static  final long seriaVersionUID = 168765L;
     //转发节点的IP
     private String routeIP;

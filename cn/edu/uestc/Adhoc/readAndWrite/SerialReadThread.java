@@ -5,6 +5,7 @@ import cn.edu.uestc.Adhoc.entity.*;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.util.TooManyListenersException;
 
 import gnu.io.SerialPortEvent;
@@ -15,24 +16,39 @@ public class SerialReadThread implements Runnable, SerialPortEventListener {
 	private Thread readThread;
 
 	private BufferedInputStream bis;
+    private ObjectInputStream ois;
 
 	public SerialReadThread(InputStream is) {
 		this.is = is;
 		bis = new BufferedInputStream(this.is);
-
 		try {
 			// 在节点上注册事件监听器
+//            ois = new ObjectInputStream(is);
+            System.out.println("初始化对象输入流成功！！");
 			System.out.println("为串口注册事件监听...");
 			AdhocNode.serialPort.addEventListener(this);
 		} catch (TooManyListenersException e) {
 			e.printStackTrace();
-		} 
-		// 通知数据可用，开始读数据
+		} catch (Exception e) {
+            System.out.println("初始化对象输入流失败！！");
+            e.printStackTrace();
+        }
+        // 通知数据可用，开始读数据
 		AdhocNode.serialPort.notifyOnDataAvailable(true);
 		readThread = new Thread(this);
 		readThread.start();
+        System.out.println("接收线程初始化完毕！");
 	}
-
+//    public SerialReadThread(InputStream is)
+//    {
+//        try {
+//            ois = new ObjectInputStream(is);
+//            System.out.println("初始化对象输入流成功！！");
+//        }catch (IOException e){
+//            System.out.println("初始化对象输入流失败！！");
+//            throw new RuntimeException(e);
+//        }
+//    }
 	@Override
 	public void run() {
 		try {
@@ -60,13 +76,19 @@ public class SerialReadThread implements Runnable, SerialPortEventListener {
 			byte[] buf = new byte[1024];
 			try {
 				int numBytes = 0;
+                Message message=null;
 				while (is.available() > 0) {
 					numBytes = is.read(buf);
-					//将读取到的数据输出到控制台
+				//	将读取到的数据输出到控制台
+//                    try {
+//                        message = (Message) ois.readObject();
+//                    }catch (ClassNotFoundException cfe){}
 				}
 				System.out.print("收到数据:");
-                String message=new String(buf,0,numBytes);
-				System.out.println(message);
+                String messageInfo=new String(buf,0,numBytes);
+				System.out.println(messageInfo);
+                if(message!=null)
+                    System.out.println("源IP："+message.getSrcIP()+",目的IP"+message.getDestIP());
 			} catch (IOException e) {
 				e.printStackTrace();
 			} 

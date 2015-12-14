@@ -22,6 +22,9 @@ import gnu.io.UnsupportedCommOperationException;
  * 路径中性能最差的一个节点的信息，就可以知道这条路径上能发送多大的数据。因此在转发路由请求的过程中，每一个节点检查请求中的消
  * 息中的最低节点性能信息，通过和自身比较，如果自身低于该性能，则重新设置最低性能信息，之后再转发出去。ps：路由请求信息应该还
  * 要增加一个字段来描述整个路由路径中最低节点的性能信息。
+ *
+ * 想要设置路由表项的有效时间，可以在新建该表项时增加一个时间戳，当访问该表项时带着时间戳去访问，如果当前时间大于了表项的时间戳
+ * n（设置的失效时间）则该表项被判定为无效，应该从路由表中删除。
  */
 public class AdhocNode implements IAdhocNode {
 
@@ -33,7 +36,9 @@ public class AdhocNode implements IAdhocNode {
     //串口输入输出流
     private InputStream is;
     private OutputStream os;
-
+    public OutputStream getOs(){
+        return  this.os;
+    }
     // 节点IP地址和节点端口名字
     private String ip;
     private String portName;
@@ -42,7 +47,7 @@ public class AdhocNode implements IAdhocNode {
     //节点的路由表
     private Map<String, RouteEntry> routeTable = new HashMap<String, RouteEntry>();
     // 节点的处理器个数以及最大内存
-    private SystemInfo systemInfo;
+    private SystemInfo systemInfo=new SystemInfo();
 
     // 读写线程
     public Thread readThread;
@@ -53,9 +58,9 @@ public class AdhocNode implements IAdhocNode {
         return ip;
     }
 
-//	public void setIp(String ip) {
-//		this.ip = ip;
-//	}
+	public void setIp(String ip) {
+		this.ip = ip;
+	}
 
     // 节点处理器个数
     public int getProcessorCount() {
@@ -84,14 +89,20 @@ public class AdhocNode implements IAdhocNode {
         try {
             init();
         } catch (Exception e) {
+            System.out.println("节点初始化失败！！");
+            System.exit(1);
         }
         // 为节点初始化收发线程
+        System.out.println("节点初始化成功！！");
         readThread = new Thread(new SerialReadThread(is));
         readThread.start();
         System.out.println("接收线程开启，可以接收数据...");
 //		writeThread = new Thread(new SerialWriteThread(os));
-    }
 
+    }
+    public  void setWriteThread(SerialWriteThread writeThread){
+        this.writeThread=new Thread(writeThread);
+    }
     @Test
     // 节点初始化
     private void init() throws UnsupportedCommOperationException,
