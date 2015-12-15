@@ -1,14 +1,16 @@
 package cn.edu.uestc.Adhoc.entity;
 
-import java.io.Serializable;
+
+import cn.edu.uestc.Adhoc.utils.AdhocUtils;
+
+import java.util.Arrays;
 
 /**
  * Created by walter on 15-12-11.
  */
-public class MessageData extends Message implements Serializable{
-    static  final long seriaVersionUID = 16876554L;
+public class MessageData extends Message{
     //去往目标节点的下一跳节点地址
-    private String nextIP;
+    private int nextIP;
     //数据长度
     private int dataLen;
     //数据的内容
@@ -17,11 +19,17 @@ public class MessageData extends Message implements Serializable{
     public MessageData() {
     }
 
-    public String getNextIP() {
+    public MessageData(int nextIP, int dataLen, byte[] content) {
+        this.nextIP = nextIP;
+        this.dataLen = dataLen;
+        this.content = content;
+    }
+
+    public int getNextIP() {
         return nextIP;
     }
 
-    public void setNextIP(String nextIP) {
+    public void setNextIP(int nextIP) {
         this.nextIP = nextIP;
     }
 
@@ -39,5 +47,49 @@ public class MessageData extends Message implements Serializable{
 
     public void setContent(byte[] content) {
         this.content = content;
+    }
+    @Override
+    public byte[] getBytes(){
+        byte[] srcByte=AdhocUtils.IntToBytes(getSrcIP());
+        byte[] nextByte=AdhocUtils.IntToBytes(nextIP);
+        byte[] destByte=AdhocUtils.IntToBytes(getDestIP());
+        int IPAndSoOnLen=3*2+1+1;//三个IP长度加上数据类型，加上数据长度变量所占长度
+        int len=RouteProtocol.PROTOCOL_LEN*2+dataLen+IPAndSoOnLen;
+        byte[] messageByte=new byte[len];
+        messageByte[0]=RouteProtocol.frameHeader[0];
+        messageByte[1]=RouteProtocol.frameHeader[1];//帧头,0,1
+        messageByte[2]=RouteProtocol.RREQ;//数据类型,2
+        messageByte[3]=srcByte[0];
+        messageByte[4]=srcByte[1];//源节点,3,4
+        messageByte[5]=nextByte[0];
+        messageByte[6]=nextByte[1];//转发节点,5,6
+        messageByte[7]=destByte[0];
+        messageByte[8]=destByte[1];//目标节点7,8
+        messageByte[9]=(byte)dataLen;
+        //待发送的字节数组
+        for (int i=10;i<len-2;i++){
+            messageByte[i]=content[i-10];
+        }
+
+        messageByte[len-2]=RouteProtocol.frameEnd[0];
+        messageByte[len-1]=RouteProtocol.frameEnd[1];//帧尾
+        return  messageByte;
+    }
+    //将byte数组转化为Message对象
+    public static MessageData recoverMsg(byte[] bytes) {
+        ///恢复byte数组中的数据
+        int srcIP=AdhocUtils.BytesToint(new byte[]{bytes[3],bytes[4]});
+        int nextIP=AdhocUtils.BytesToint(new byte[]{bytes[5],bytes[6]});
+        int destIP=AdhocUtils.BytesToint(new byte[]{bytes[7],bytes[8]});
+        byte datalen=bytes[9];
+        byte[] information=Arrays.copyOfRange(bytes, 10, bytes.length - 2);
+
+        MessageData message=new MessageData(nextIP,datalen,information);
+        message.setSrcIP(srcIP);
+        message.setDestIP(destIP);
+        message.setType(RouteProtocol.DATA);
+
+
+        return message;
     }
 }

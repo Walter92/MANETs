@@ -5,33 +5,34 @@ package cn.edu.uestc.Adhoc.entity;
  */
 public abstract class Message {
     //信息的类型，便于分发消息处理
-    protected String type;
+    protected int type;
     //源节点的IP
-    protected String srcIP;
+    protected int srcIP;
     //目的节点的IP
-    protected String destIP;
+    protected int destIP;
 
-    public String getSrcIP() {
+    public int getSrcIP() {
         return srcIP;
     }
 
-    public void setSrcIP(String srcIP) {
+    public void setSrcIP(int srcIP) {
         this.srcIP = srcIP;
     }
 
-    public String getDestIP() {
+    public int getDestIP() {
         return destIP;
     }
 
-    public void setDestIP(String destIP) {
+    public void setDestIP(int destIP) {
         this.destIP = destIP;
     }
 
-    public String getType() {
+    public int getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(int type) {
         this.type = type;
     }
+    public abstract byte[] getBytes();
 }

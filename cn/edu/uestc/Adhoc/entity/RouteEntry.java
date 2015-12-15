@@ -18,7 +18,7 @@ import java.util.HashSet;
 public class RouteEntry {
 
     //目标节点的IP地址
-    private String DestIP = "";
+    private int DestIP;
     //目标节点的序列号
     private int SeqNum;
     //路由表项当前状态
@@ -26,15 +26,15 @@ public class RouteEntry {
     //去往目标节点的跳数
     private int HopCount;
     //去往目标节点的下一节点的IP地址
-    private String NextHopIP = "";
+    private int NextHopIP;
 
-    private HashSet<String> PrecursorIPs = new HashSet<String>();
+    private HashSet<Integer> PrecursorIPs = new HashSet<Integer>();
 
     //在这个时间内，该表项有效
     private int Lifetime;
 
 
-    public RouteEntry(String destIP, String nextHopIP,int seqNum, StateFlags state, int hopCount,  int lifetime) {
+    public RouteEntry(int destIP, int nextHopIP,int seqNum, StateFlags state, int hopCount,  int lifetime) {
         DestIP = destIP;
         SeqNum = seqNum;
         State = state;
@@ -44,11 +44,11 @@ public class RouteEntry {
     }
 
     //setter和getter方法
-    public String getDestIP() {
+    public int getDestIP() {
         return DestIP;
     }
 
-    public void setDestIP(String destIP) {
+    public void setDestIP(int destIP) {
         DestIP = destIP;
     }
 
@@ -76,19 +76,19 @@ public class RouteEntry {
         HopCount = hopCount;
     }
 
-    public String getNextHopIP() {
+    public int getNextHopIP() {
         return NextHopIP;
     }
 
-    public void setNextHopIP(String nextHopIP) {
+    public void setNextHopIP(int nextHopIP) {
         NextHopIP = nextHopIP;
     }
 
-    public HashSet<String> getPrecursorIPs() {
+    public HashSet<Integer> getPrecursorIPs() {
         return PrecursorIPs;
     }
 
-    public void setPrecursorIPs(HashSet<String> precursorIPs) {
+    public void setPrecursorIPs(HashSet<Integer> precursorIPs) {
         PrecursorIPs = precursorIPs;
     }
 

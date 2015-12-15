@@ -6,20 +6,23 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.util.Arrays;
 import java.util.TooManyListenersException;
 
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 
 public class SerialReadThread implements Runnable, SerialPortEventListener {
+    private IAdhocNode adhocNode;
 	private InputStream is;
 	private Thread readThread;
 
 	private BufferedInputStream bis;
     private ObjectInputStream ois;
 
-	public SerialReadThread(InputStream is) {
-		this.is = is;
+	public SerialReadThread(AdhocNode adhocNode) {
+		this.adhocNode = adhocNode;
+        this.is=adhocNode.getIs();
 		bis = new BufferedInputStream(this.is);
 		try {
 			// 在节点上注册事件监听器
@@ -73,22 +76,25 @@ public class SerialReadThread implements Runnable, SerialPortEventListener {
 		case SerialPortEvent.OUTPUT_BUFFER_EMPTY:// 输出缓冲区清空
 			break;
 		case SerialPortEvent.DATA_AVAILABLE:// 数据到达
-			byte[] buf = new byte[1024];
+			byte[] buf = new byte[1024*4];
+            byte[] bytes=null;
 			try {
 				int numBytes = 0;
                 Message message=null;
 				while (is.available() > 0) {
 					numBytes = is.read(buf);
+                    bytes= Arrays.copyOfRange(buf,0,numBytes);
+                    adhocNode.dispatch(bytes);
 				//	将读取到的数据输出到控制台
 //                    try {
 //                        message = (Message) ois.readObject();
 //                    }catch (ClassNotFoundException cfe){}
 				}
-				System.out.print("收到数据:");
-                String messageInfo=new String(buf,0,numBytes);
-				System.out.println(messageInfo);
-                if(message!=null)
-                    System.out.println("源IP："+message.getSrcIP()+",目的IP"+message.getDestIP());
+//				System.out.print("收到数据:");
+//                String messageInfo=new String(buf,0,numBytes);
+//				System.out.println(messageInfo);
+//                if(message!=null)
+//                    System.out.println("源IP："+message.getSrcIP()+",目的IP"+message.getDestIP());
 			} catch (IOException e) {
 				e.printStackTrace();
 			} 

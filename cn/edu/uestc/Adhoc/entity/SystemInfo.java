@@ -1,14 +1,11 @@
 package cn.edu.uestc.Adhoc.entity;
 
-import java.io.Serializable;
-
 /**
  * Created by walter on 15-12-3.
  */
-public class SystemInfo implements Serializable{
-    static  final long seriaVersionUID = 42L;
+public class SystemInfo{
     private int processorCount;
-    private long memorySize;
+    private int memorySize;
 //    private  String os;
 //
 //    public String getOs() {
@@ -19,6 +16,14 @@ public class SystemInfo implements Serializable{
 //        this.os = os;
 //    }
 
+    public SystemInfo() {
+    }
+
+    public SystemInfo(int processorCount, int memorySize) {
+        this.processorCount = processorCount;
+        this.memorySize = memorySize;
+    }
+
     public int getProcessorCount() {
         return processorCount;
     }
@@ -27,14 +32,23 @@ public class SystemInfo implements Serializable{
         this.processorCount = processorCount;
     }
 
-    public long getMemorySize() {
+    public int getMemorySize() {
         return memorySize;
     }
 
-    public void setMemorySize(long memorySize) {
+    public void setMemorySize(int memorySize) {
         this.memorySize = memorySize;
     }
+    public byte[] getBytes(){
+        byte[] sysInfo=new byte[2];
+        sysInfo[0]=(byte)processorCount;
+        sysInfo[1]=(byte)memorySize;
+        return  sysInfo;
+    }
 
+    public static SystemInfo recoverSysInfo(byte[] bytes){
+       return  new SystemInfo(bytes[0],bytes[1]);
+    }
     @Override
     public String toString() {
         return "处理器个数:"
