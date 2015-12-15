@@ -9,27 +9,29 @@ public class SerialWriteThread implements Runnable {
     // 数据输出流
     private OutputStream os;
     private BufferedOutputStream bos;
-//    private ObjectOutputStream objectOutputStream;
+    //    private ObjectOutputStream objectOutputStream;
     private Message message;
 
-    public SerialWriteThread( OutputStream os,Message message) throws  IOException{
+    public SerialWriteThread(OutputStream os, Message message) throws IOException {
         this.os = os;
         this.bos = new BufferedOutputStream(this.os);
 //        objectOutputStream = new ObjectOutputStream(os);
         this.message = message;
     }
-    public SerialWriteThread(OutputStream os){
+
+    public SerialWriteThread(OutputStream os) {
         this.os = os;
         this.bos = new BufferedOutputStream(this.os);
     }
+
     @Override
     public void run() {
         System.out.println("开始发送数据...");
+        while (true) {
             try {
-                bos.write(message.getBytes());
+//                bos.write(message.getBytes());
+                bos.write("hello world...".getBytes());
                 bos.flush();
-//                objectOutputStream.writeObject(message);
-//                objectOutputStream.flush();
                 Thread.sleep(1000);
             } catch (IOException e) {
                 System.out.println("发送异常...");
@@ -38,4 +40,5 @@ public class SerialWriteThread implements Runnable {
                 e.printStackTrace();
             }
         }
+    }
 }

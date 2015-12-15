@@ -22,7 +22,7 @@ import gnu.io.UnsupportedCommOperationException;
  * 路径中性能最差的一个节点的信息，就可以知道这条路径上能发送多大的数据。因此在转发路由请求的过程中，每一个节点检查请求中的消
  * 息中的最低节点性能信息，通过和自身比较，如果自身低于该性能，则重新设置最低性能信息，之后再转发出去。ps：路由请求信息应该还
  * 要增加一个字段来描述整个路由路径中最低节点的性能信息。
- *
+ * <p/>
  * 想要设置路由表项的有效时间，可以在新建该表项时增加一个时间戳，当访问该表项时带着时间戳去访问，如果当前时间大于了表项的时间戳
  * n（设置的失效时间）则该表项被判定为无效，应该从路由表中删除。
  */
@@ -35,11 +35,17 @@ public class AdhocNode implements IAdhocNode {
 
     //串口输入输出流
     private InputStream is;
-    public InputStream getIs(){return this.is;}
-    private OutputStream os;
-    public OutputStream getOs(){
-        return  this.os;
+
+    public InputStream getIs() {
+        return this.is;
     }
+
+    private OutputStream os;
+
+    public OutputStream getOs() {
+        return this.os;
+    }
+
     // 节点IP地址和节点端口名字
     private int ip;
     private String portName;
@@ -48,7 +54,7 @@ public class AdhocNode implements IAdhocNode {
     //节点的路由表
     private Map<Integer, RouteEntry> routeTable = new HashMap<Integer, RouteEntry>();
     // 节点的处理器个数以及最大内存
-    private SystemInfo systemInfo=new SystemInfo();
+    private SystemInfo systemInfo = new SystemInfo();
 
     // 读写线程
     public Thread readThread;
@@ -59,9 +65,9 @@ public class AdhocNode implements IAdhocNode {
         return ip;
     }
 
-	public void setIp(int ip) {
-		this.ip = ip;
-	}
+    public void setIp(int ip) {
+        this.ip = ip;
+    }
 
     // 节点处理器个数
     public int getProcessorCount() {
@@ -77,8 +83,8 @@ public class AdhocNode implements IAdhocNode {
     {
         Runtime rt = Runtime.getRuntime();
         // 获取主机空闲内存
-        long free=rt.freeMemory();
-        systemInfo.setMemorySize((int)(free/1024));
+        long free = rt.freeMemory();
+        systemInfo.setMemorySize((int) (free / 1024));
         // 获取主机处理器个数
         systemInfo.setProcessorCount(rt.availableProcessors());
     }
@@ -87,7 +93,7 @@ public class AdhocNode implements IAdhocNode {
     public AdhocNode(String portName) {
         // 设置通信的串口
         this.portName = portName;
-        this.seqNum=1;
+        this.seqNum = 1;
         try {
             init();
         } catch (Exception e) {
@@ -99,12 +105,14 @@ public class AdhocNode implements IAdhocNode {
         readThread = new Thread(new SerialReadThread(this));
         readThread.start();
         System.out.println("接收线程开启，可以接收数据...");
-		writeThread = new Thread(new SerialWriteThread(os));
+        writeThread = new Thread(new SerialWriteThread(os));
 
     }
-    public  void setWriteThread(SerialWriteThread writeThread){
-        this.writeThread=new Thread(writeThread);
+
+    public void setWriteThread(SerialWriteThread writeThread) {
+        this.writeThread = new Thread(writeThread);
     }
+
     @Test
     // 节点初始化
     private void init() throws UnsupportedCommOperationException,
@@ -115,7 +123,7 @@ public class AdhocNode implements IAdhocNode {
         while (portList.hasMoreElements()) {
             // 判断端口的类型以及名字，打开需要打开的端口
             portId = (CommPortIdentifier) portList.nextElement();
-            // System.out.println(portId.getName());
+            System.out.println(portId.getName());
             if (portId.getPortType() == CommPortIdentifier.PORT_SERIAL) {
                 if (portName.equals(portId.getName())) {
                     try {
@@ -157,60 +165,58 @@ public class AdhocNode implements IAdhocNode {
 
     @Override
     public void sendRREQ(int destIP) {
-        System.out.println("节点"+getIp()+"对节点"+destIP
-                +"发起路由请求...");
+        System.out.println("节点" + getIp() + "对节点" + destIP
+                + "发起路由请求...");
         //本节点对目标节点发出一次RREQ，发出后把seqNum参数加一，以便下次在发出RREQ时为最新请求
-        MessageRREQ messageRREQ =new MessageRREQ();
+        MessageRREQ messageRREQ = new MessageRREQ();
         messageRREQ.setType(RouteProtocol.RREQ);
         messageRREQ.setRouteIP(ip);
         messageRREQ.setRouteIP(destIP);
         messageRREQ.setSeqNum(seqNum++);
         messageRREQ.setSrcIP(ip);
         messageRREQ.setSystemInfo(systemInfo);
-        messageRREQ.setHop((byte)0);
+        messageRREQ.setHop((byte) 0);
         try {
-            Thread t=new Thread(new SerialWriteThread(os, messageRREQ));
+            Thread t = new Thread(new SerialWriteThread(os, messageRREQ));
             t.start();
             //等待发送结束
             t.join();
-            System.out.println("节点"+getIp()+"对节点"+destIP
-                    +"发起路由请求成功，正在等待路由回复...");
+            System.out.println("节点" + getIp() + "对节点" + destIP
+                    + "发起路由请求成功，正在等待路由回复...");
         } catch (IOException e) {
-            System.out.println("节点"+getIp()+"对节点"+destIP
-                    +"发起路由请求失败，发送线程创建失败!");
-        }catch (InterruptedException ie){
+            System.out.println("节点" + getIp() + "对节点" + destIP
+                    + "发起路由请求失败，发送线程创建失败!");
+        } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
     }
 
     /**
-     *
-     * @param messageRREQ
-     * 收到的信息对象
-     * 首先判断本机路由表中是否有该信息中源地址的表项，如果有并且比收到的信息中的序列号大，则丢弃该信息不做处理
-     * 否则新建一个路由表项，以源地址为键，如果是直接收到源节点的请求，信息中转发节点就是源节点，可以直接用于建立去往源节点
-     * 的下一跳节点，建立反向路由
+     * @param messageRREQ 收到的信息对象
+     *                    首先判断本机路由表中是否有该信息中源地址的表项，如果有并且比收到的信息中的序列号大，则丢弃该信息不做处理
+     *                    否则新建一个路由表项，以源地址为键，如果是直接收到源节点的请求，信息中转发节点就是源节点，可以直接用于建立去往源节点
+     *                    的下一跳节点，建立反向路由
      */
     @Override
     public void receiveRREQ(MessageRREQ messageRREQ) {
-        System.out.println("节点"+getIp()+"收到节点"+ messageRREQ.getSrcIP()
-                +"对节点"+ messageRREQ.getDestIP()+"发起的路由请求，正在处理中...");
-        int key= messageRREQ.getSrcIP();
+        System.out.println("节点" + getIp() + "收到节点" + messageRREQ.getSrcIP()
+                + "对节点" + messageRREQ.getDestIP() + "发起的路由请求，正在处理中...");
+        int key = messageRREQ.getSrcIP();
         //如果收到的信息里面，请求的序列号的键存在，并且小于等于本机所存，则抛弃
-        if(routeTable.containsKey(key)&&routeTable.get(key).getSeqNum()>= messageRREQ.getSeqNum()){
+        if (routeTable.containsKey(key) && routeTable.get(key).getSeqNum() >= messageRREQ.getSeqNum()) {
             return;
-        }else{
+        } else {
             //更新自己的路由表，路由表项的信息为该信息的源节点为目的地址，去往该目的地址的下一跳节点即为转发该信息的节点
             //RouteEntry(String destIP, int seqNum, StateFlags state, int hopCount, String nextHopIP, int lifetime)
-            routeTable.put(key,new RouteEntry(key, messageRREQ.getRouteIP(), messageRREQ.getSeqNum(),StateFlags.VALID, messageRREQ.getHop(),0));
+            routeTable.put(key, new RouteEntry(key, messageRREQ.getRouteIP(), messageRREQ.getSeqNum(), StateFlags.VALID, messageRREQ.getHop(), 0));
         }
         //如果收到的信息中是寻找本机，则回复路由响应
-        if(ip==(messageRREQ.getDestIP())){
+        if (ip == (messageRREQ.getDestIP())) {
             sendRREP(messageRREQ.getSrcIP());
             return;
         }
         //如果信息中不是在寻找本机，则给跳数加一和更新转发节点ip后转发该请求
-        messageRREQ.setHop((byte)(messageRREQ.getHop()+1));
+        messageRREQ.setHop((byte) (messageRREQ.getHop() + 1));
         messageRREQ.setRouteIP(ip);
         //转发
         forwardRREQ(messageRREQ);
@@ -219,64 +225,64 @@ public class AdhocNode implements IAdhocNode {
 
     @Override
     public void forwardRREQ(MessageRREQ messageRREQ) {
-        System.out.println("节点"+ip+"转发节点"+ messageRREQ.getSrcIP()+"对节点"+ messageRREQ.getDestIP()
-                +"发起的路由请求...");
+        System.out.println("节点" + ip + "转发节点" + messageRREQ.getSrcIP() + "对节点" + messageRREQ.getDestIP()
+                + "发起的路由请求...");
         try {
-            Thread t=new Thread(new SerialWriteThread(os, messageRREQ));
+            Thread t = new Thread(new SerialWriteThread(os, messageRREQ));
             t.start();
             //等待发送结束
             t.join();
             System.out.println("转发路由请求成功!");
         } catch (IOException e) {
             System.out.println("转发路由请求失败，发送线程创建失败!");
-        }catch (InterruptedException ie){
+        } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
     }
 
     @Override
     public void sendRREP(int destIP) {
-        MessageRREP messageRREP =new MessageRREP();
+        MessageRREP messageRREP = new MessageRREP();
         messageRREP.setType(RouteProtocol.RREP);
         messageRREP.setSrcIP(ip);
         messageRREP.setDestIP(destIP);
         messageRREP.setRouteIP(ip);
         messageRREP.setSeqNum(seqNum++);
-        messageRREP.setHop((byte)0);
+        messageRREP.setHop((byte) 0);
         messageRREP.setSystemInfo(systemInfo);
-        System.out.println("节点"+ip+"回复节点"+destIP+"的路由请求...");
+        System.out.println("节点" + ip + "回复节点" + destIP + "的路由请求...");
         try {
-            Thread t=new Thread(new SerialWriteThread(os, messageRREP));
+            Thread t = new Thread(new SerialWriteThread(os, messageRREP));
             t.start();
             //等待发送结束
             t.join();
             System.out.println("路由回复成功!");
         } catch (IOException e) {
             System.out.println("路由回复失败，发送线程创建失败!");
-        }catch (InterruptedException ie){
+        } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
     }
 
     @Override
     public void receiveRREP(MessageRREP messageRREP) {
-        System.out.println("节点"+ip+"收到节点"+ messageRREP.getSrcIP()
-                +"对节点"+ messageRREP.getDestIP()+"发起的路由回复，正在处理中...");
-        int key= messageRREP.getSrcIP();
+        System.out.println("节点" + ip + "收到节点" + messageRREP.getSrcIP()
+                + "对节点" + messageRREP.getDestIP() + "发起的路由回复，正在处理中...");
+        int key = messageRREP.getSrcIP();
         //如果收到的信息里面，请求的序列号的键存在，并且小于等于本机所存，则抛弃
-        if(routeTable.containsKey(key)&&routeTable.get(key).getSeqNum()>= messageRREP.getSeqNum()){
+        if (routeTable.containsKey(key) && routeTable.get(key).getSeqNum() >= messageRREP.getSeqNum()) {
             return;
-        }else{
-            routeTable.put(key,new RouteEntry(key, messageRREP.getRouteIP(), messageRREP.getSeqNum(),StateFlags.VALID, messageRREP.getHop(),0));
+        } else {
+            routeTable.put(key, new RouteEntry(key, messageRREP.getRouteIP(), messageRREP.getSeqNum(), StateFlags.VALID, messageRREP.getHop(), 0));
         }
         //如果收到的信息中是寻找本机，则回复路由响应
-        if(ip==messageRREP.getDestIP()){
-           System.out.println("本节点发起的对节点"+ messageRREP.getDestIP()+"的路由请求成功，收到该节点的路由回复，该节点系统信息如下为,"+
-                   messageRREP.getSystemInfo().toString());
+        if (ip == messageRREP.getDestIP()) {
+            System.out.println("本节点发起的对节点" + messageRREP.getDestIP() + "的路由请求成功，收到该节点的路由回复，该节点系统信息如下为," +
+                    messageRREP.getSystemInfo().toString());
             return;
         }
         //如果信息中不是回复寻找本机，则给跳数加一和更新转发节点ip后转发该请求
-        messageRREP.setHop((byte)(messageRREP.getHop()+1));
+        messageRREP.setHop((byte) (messageRREP.getHop() + 1));
         messageRREP.setRouteIP(ip);
         //转发
         forwardRREP(messageRREP);
@@ -284,38 +290,38 @@ public class AdhocNode implements IAdhocNode {
 
     @Override
     public void forwardRREP(MessageRREP messageRREP) {
-        System.out.println("节点"+ip+"转发节点"+ messageRREP.getSrcIP()+"对节点"+ messageRREP.getDestIP()
-                +"的路由回复...");
+        System.out.println("节点" + ip + "转发节点" + messageRREP.getSrcIP() + "对节点" + messageRREP.getDestIP()
+                + "的路由回复...");
         try {
-            Thread t=new Thread(new SerialWriteThread(os, messageRREP));
+            Thread t = new Thread(new SerialWriteThread(os, messageRREP));
             t.start();
             //等待发送结束
             t.join();
             System.out.println("转发路由回复成功!");
         } catch (IOException e) {
             System.out.println("转发路由回复失败，发送线程创建失败!");
-        }catch (InterruptedException ie){
+        } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
     }
 
     @Override
-    public  void dispatch(byte[] bytes) {
-        byte type=bytes[2];
-        Message message=null;
+    public void dispatch(byte[] bytes) {
+        byte type = bytes[2];
+        Message message = null;
         //如果是数据类型则恢复为数据MessageData，并且交给数据类型接收方法
-        if(type==RouteProtocol.DATA){
-            message=MessageData.recoverMsg(bytes);
+        if (type == RouteProtocol.DATA) {
+            message = MessageData.recoverMsg(bytes);
             receiveDATA((MessageData) message);
         }
         //如果是路由回复类型则恢复为数据MessageRREP，并且交给数据类型接收方法
-        else if(type==RouteProtocol.RREP){
-            message=MessageRREP.recoverMsg(bytes);
+        else if (type == RouteProtocol.RREP) {
+            message = MessageRREP.recoverMsg(bytes);
             receiveRREP((MessageRREP) message);
         }
         //如果是路由请求类型则恢复为数据MessageRREQ，并且交给数据类型接收方法
-        else{
-            message=MessageRREQ.recoverMsg(bytes);
+        else {
+            message = MessageRREQ.recoverMsg(bytes);
             receiveRREQ((MessageRREQ) message);
         }
     }
@@ -323,8 +329,8 @@ public class AdhocNode implements IAdhocNode {
     @Override
     public void sendMessage(int destIP) {
         //节点想要给目的节点发送消息，首先查询本节点中路由表是否有可用的有效路由，如果没有就发起路由请求
-        RouteEntry routeEntry=queryRouteTable(destIP);
-        if(routeEntry==null){
+        RouteEntry routeEntry = queryRouteTable(destIP);
+        if (routeEntry == null) {
             sendRREQ(destIP);
             //需要等待路由回复.....还没有完成，放一放先....
             /**
@@ -332,20 +338,20 @@ public class AdhocNode implements IAdhocNode {
              */
         }
         //如果路由表中有可用路由则可以向其发送数据
-        MessageData message=new MessageData();
+        MessageData message = new MessageData();
         message.setDestIP(destIP);
         message.setSrcIP(ip);
         message.setNextIP(routeEntry.getNextHopIP());
         message.setContent("hello".getBytes());
         try {
-            Thread t=new Thread(new SerialWriteThread(os, message));
+            Thread t = new Thread(new SerialWriteThread(os, message));
             t.start();
             //等待发送结束
             t.join();
             System.out.println("数据发送成功!");
         } catch (IOException e) {
             System.out.println("数据发送失败，发送线程创建失败!");
-        }catch (InterruptedException ie){
+        } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
     }
@@ -353,47 +359,48 @@ public class AdhocNode implements IAdhocNode {
     @Override
     public void receiveDATA(MessageData messageData) {
         //收到数据类型的信息时不需要检查序列号
-        int nextIP=messageData.getNextIP();
-        if(nextIP!=ip)
+        int nextIP = messageData.getNextIP();
+        if (nextIP != ip)
             return;
-        int destIP=messageData.getDestIP();
+        int destIP = messageData.getDestIP();
 
-        if(destIP==ip){
+        if (destIP == ip) {
             System.out.println("本节点收到来自" + messageData.getSrcIP()
                     + "的数据，" + "内容为：" + new String(messageData.getContent()));
             return;
         }
         //查询本节点的路由表，得到去往目的节点的下一跳节点，并改变消息中的下一跳节点地址后转发出去
-        int next=queryRouteTable(destIP).getNextHopIP();
+        int next = queryRouteTable(destIP).getNextHopIP();
         messageData.setNextIP(next);
         forwardDATA(messageData);
     }
 
     /**
      * 这个几个forwardXXXX方法的日志记录完全可以用AOP实现，采用动态代理即可，但是劳资现在不想干！！！！
+     *
      * @param messageData
      */
     @Override
     public void forwardDATA(MessageData messageData) {
-        System.out.println("节点"+ip+"转发节点"+ messageData.getSrcIP()+"对节点"+ messageData.getDestIP()
-                +"的数据...");
+        System.out.println("节点" + ip + "转发节点" + messageData.getSrcIP() + "对节点" + messageData.getDestIP()
+                + "的数据...");
         try {
-            Thread t=new Thread(new SerialWriteThread(os, messageData));
+            Thread t = new Thread(new SerialWriteThread(os, messageData));
             t.start();
             //等待发送结束
             t.join();
             System.out.println("转发数据成功!");
         } catch (IOException e) {
             System.out.println("转发数据失败，发送线程创建失败!");
-        }catch (InterruptedException ie){
+        } catch (InterruptedException ie) {
             ie.printStackTrace();
         }
     }
 
     @Override
     public RouteEntry queryRouteTable(int destIP) {
-        RouteEntry routeEntry=routeTable.get(destIP);
-        if(routeEntry!=null&&routeEntry.getState()==StateFlags.VALID)
+        RouteEntry routeEntry = routeTable.get(destIP);
+        if (routeEntry != null && routeEntry.getState() == StateFlags.VALID)
             return routeEntry;
         return null;
     }

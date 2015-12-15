@@ -34,7 +34,7 @@ public class RouteEntry {
     private int Lifetime;
 
 
-    public RouteEntry(int destIP, int nextHopIP,int seqNum, StateFlags state, int hopCount,  int lifetime) {
+    public RouteEntry(int destIP, int nextHopIP, int seqNum, StateFlags state, int hopCount, int lifetime) {
         DestIP = destIP;
         SeqNum = seqNum;
         State = state;

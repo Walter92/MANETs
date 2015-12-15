@@ -9,12 +9,12 @@ import java.util.Map;
 
 public class AdhocTest {
 
-	public static void main(String[] args) {
-       AdhocNode adhocNode = AdhocNodeFactory.getInstance("usb0");
+    public static void main(String[] args) {
+        AdhocNode adhocNode = AdhocNodeFactory.getInstance("usb0");
         adhocNode.setIp(1);
-//       adhocNode.writeThread.start();
+        adhocNode.writeThread.start();
 //        int numberbefore=0xabcd;
-        adhocNode.sendRREQ(2);
+//        adhocNode.sendRREQ(2);
 //        byte[] b=AdhocUtils.IntToBytes(numberbefore);
 //        int numberafter=AdhocUtils.BytesToint(b);
 //        System.out.println(numberafter==numberbefore);

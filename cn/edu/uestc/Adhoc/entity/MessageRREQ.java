@@ -3,23 +3,24 @@ package cn.edu.uestc.Adhoc.entity;
 
 import cn.edu.uestc.Adhoc.utils.AdhocUtils;
 
-public class MessageRREQ extends Message{
+public class MessageRREQ extends Message {
     //转发节点的IP
     private int routeIP;
     //系统信息，包含了处理器个数以及内存大小
     private SystemInfo systemInfo;
     //跳数
-    private  byte hop;
+    private byte hop;
     /**
      * 数据序列号，如果收到的数据小于或者等于节点存储的序列号时，则抛弃该数据，不做处理，避免形成广播风暴
-     *比如说A节点广播了某一次路由请求，B节点收到该请求再次广播，则A节点就会收到该广播，所以通过该属性来判
+     * 比如说A节点广播了某一次路由请求，B节点收到该请求再次广播，则A节点就会收到该广播，所以通过该属性来判
      * 断这次数据帧是同一次广播，进而不做理会
      */
     protected byte seqNum;
+
     public MessageRREQ() {
     }
 
-    public MessageRREQ(int routeIP,  byte hop, byte seqNum,SystemInfo systemInfo) {
+    public MessageRREQ(int routeIP, byte hop, byte seqNum, SystemInfo systemInfo) {
         this.routeIP = routeIP;
         this.systemInfo = systemInfo;
         this.hop = hop;
@@ -57,36 +58,38 @@ public class MessageRREQ extends Message{
     public void setSystemInfo(SystemInfo systemInfo) {
         this.systemInfo = systemInfo;
     }
+
     //将Message对象转化为byte数组，便于发送
-    public byte[] getBytes(){
-        byte[] srcByte=AdhocUtils.IntToBytes(getSrcIP());
-        byte[] routeByte=AdhocUtils.IntToBytes(routeIP);
-        byte[] destByte=AdhocUtils.IntToBytes(getDestIP());
-        byte[] sysByte=systemInfo.getBytes();
-        byte[] messageByte={
-                RouteProtocol.frameHeader[0],RouteProtocol.frameHeader[1],//帧头,0,1
+    public byte[] getBytes() {
+        byte[] srcByte = AdhocUtils.IntToBytes(getSrcIP());
+        byte[] routeByte = AdhocUtils.IntToBytes(routeIP);
+        byte[] destByte = AdhocUtils.IntToBytes(getDestIP());
+        byte[] sysByte = systemInfo.getBytes();
+        byte[] messageByte = {
+                RouteProtocol.frameHeader[0], RouteProtocol.frameHeader[1],//帧头,0,1
                 RouteProtocol.RREQ,//数据类型,2
-                srcByte[0],srcByte[1],//源节点,3,4
-                routeByte[0],routeByte[1],//转发节点,5,6
-                destByte[0],destByte[1],//目标节点7,8
+                srcByte[0], srcByte[1],//源节点,3,4
+                routeByte[0], routeByte[1],//转发节点,5,6
+                destByte[0], destByte[1],//目标节点7,8
                 seqNum,//序列号,9
                 hop,//跳数,10
-                sysByte[0],sysByte[1],//系统信息,11,12
-                RouteProtocol.frameEnd[0],RouteProtocol.frameEnd[1]//帧尾,13,14
+                sysByte[0], sysByte[1],//系统信息,11,12
+                RouteProtocol.frameEnd[0], RouteProtocol.frameEnd[1]//帧尾,13,14
         };
-        return  messageByte;
+        return messageByte;
     }
+
     //将byte数组转化为Message对象
     public static MessageRREQ recoverMsg(byte[] bytes) {
         ///恢复byte数组中的数据
-        int srcIP=AdhocUtils.BytesToint(new byte[]{bytes[3],bytes[4]});
-        int routeIP=AdhocUtils.BytesToint(new byte[]{bytes[5],bytes[6]});
-        int destIP=AdhocUtils.BytesToint(new byte[]{bytes[7],bytes[8]});
-        byte seqNum=bytes[9];
-        byte hop=bytes[10];
-        SystemInfo sysInfo=SystemInfo.recoverSysInfo(new byte[]{bytes[11],bytes[12]});
+        int srcIP = AdhocUtils.BytesToInt(new byte[]{bytes[3], bytes[4]});
+        int routeIP = AdhocUtils.BytesToInt(new byte[]{bytes[5], bytes[6]});
+        int destIP = AdhocUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
+        byte seqNum = bytes[9];
+        byte hop = bytes[10];
+        SystemInfo sysInfo = SystemInfo.recoverSysInfo(new byte[]{bytes[11], bytes[12]});
 
-        MessageRREQ message=new MessageRREQ(routeIP,hop,seqNum,sysInfo);
+        MessageRREQ message = new MessageRREQ(routeIP, hop, seqNum, sysInfo);
         message.setSrcIP(srcIP);
         message.setDestIP(destIP);
         message.setType(RouteProtocol.RREQ);

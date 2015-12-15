@@ -3,7 +3,7 @@ package cn.edu.uestc.Adhoc.entity;
 /**
  * Created by walter on 15-12-3.
  */
-public class SystemInfo{
+public class SystemInfo {
     private int processorCount;
     private int memorySize;
 //    private  String os;
@@ -39,20 +39,22 @@ public class SystemInfo{
     public void setMemorySize(int memorySize) {
         this.memorySize = memorySize;
     }
-    public byte[] getBytes(){
-        byte[] sysInfo=new byte[2];
-        sysInfo[0]=(byte)processorCount;
-        sysInfo[1]=(byte)memorySize;
-        return  sysInfo;
+
+    public byte[] getBytes() {
+        byte[] sysInfo = new byte[2];
+        sysInfo[0] = (byte) processorCount;
+        sysInfo[1] = (byte) memorySize;
+        return sysInfo;
     }
 
-    public static SystemInfo recoverSysInfo(byte[] bytes){
-       return  new SystemInfo(bytes[0],bytes[1]);
+    public static SystemInfo recoverSysInfo(byte[] bytes) {
+        return new SystemInfo(bytes[0], bytes[1]);
     }
+
     @Override
     public String toString() {
         return "处理器个数:"
-                 + processorCount +
+                + processorCount +
                 ", 内存大小:" + memorySize;
     }
 }
