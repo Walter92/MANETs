@@ -1,6 +1,7 @@
 package cn.edu.uestc.Adhoc.readAndWrite;
 
-import cn.edu.uestc.Adhoc.entity.Message;
+import cn.edu.uestc.Adhoc.entity.message.Message;
+import cn.edu.uestc.Adhoc.entity.serial.Serial;
 
 import java.io.*;
 
@@ -12,16 +13,10 @@ public class SerialWriteThread implements Runnable {
     //    private ObjectOutputStream objectOutputStream;
     private Message message;
 
-    public SerialWriteThread(OutputStream os, Message message) throws IOException {
-        this.os = os;
+    public SerialWriteThread(Serial serial, Message message) throws IOException {
+        this.os = serial.getOs();
         this.bos = new BufferedOutputStream(this.os);
-//        objectOutputStream = new ObjectOutputStream(os);
         this.message = message;
-    }
-
-    public SerialWriteThread(OutputStream os) {
-        this.os = os;
-        this.bos = new BufferedOutputStream(this.os);
     }
 
     @Override

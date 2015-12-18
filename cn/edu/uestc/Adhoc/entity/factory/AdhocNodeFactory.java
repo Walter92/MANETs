@@ -1,4 +1,6 @@
-package cn.edu.uestc.Adhoc.entity;
+package cn.edu.uestc.Adhoc.entity.factory;
+
+import cn.edu.uestc.Adhoc.entity.adhocNode.AdhocNode;
 
 import java.io.*;
 import java.util.*;
@@ -34,7 +36,9 @@ public class AdhocNodeFactory {
         //获取配置文件中对应key，去掉key的多余空格和转化为小写
         portName = props.getProperty(portName.trim().toLowerCase());
         return new AdhocNode(portName);
+//        return null;
     }
+
 
     public static boolean closeAdhocNode(AdhocNode adhocNode) {
         return true;

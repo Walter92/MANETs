@@ -3,7 +3,7 @@ package cn.edu.uestc.Adhoc.utils;
 /**
  * Created by walter on 15-12-14.
  */
-public class AdhocUtils {
+public class MessageUtils {
 
     //注意，这两个方法只有在比如每8个字节首位都为0时才可用！！！！
     public static byte[] IntToBytes(int number) {

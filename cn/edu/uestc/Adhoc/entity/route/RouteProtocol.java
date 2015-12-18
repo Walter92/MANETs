@@ -1,4 +1,4 @@
-package cn.edu.uestc.Adhoc.entity;
+package cn.edu.uestc.Adhoc.entity.route;
 
 /**
  * Created by walter on 15-12-11.

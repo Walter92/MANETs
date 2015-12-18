@@ -1,35 +1,31 @@
 package cn.edu.uestc.Adhoc.readAndWrite;
 
-import cn.edu.uestc.Adhoc.entity.*;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.TooManyListenersException;
 
+import cn.edu.uestc.Adhoc.entity.serial.Serial;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 
 public class SerialReadThread implements Runnable, SerialPortEventListener {
-    private IAdhocNode adhocNode;
+
+    private Serial serial;
     private InputStream is;
+    private BufferedInputStream bis;
     private Thread readThread;
 
-    private BufferedInputStream bis;
-    private ObjectInputStream ois;
-
-    public SerialReadThread(AdhocNode adhocNode) {
-        this.adhocNode = adhocNode;
-        this.is = adhocNode.getIs();
+    public SerialReadThread(Serial serial) {
+        this.serial = serial;
+        this.is = serial.getIs();
         bis = new BufferedInputStream(this.is);
         try {
             // 在节点上注册事件监听器
-//            ois = new ObjectInputStream(is);
             System.out.println("初始化对象输入流成功！！");
             System.out.println("为串口注册事件监听...");
-            AdhocNode.serialPort.addEventListener(this);
+            serial.serialPort.addEventListener(this);
         } catch (TooManyListenersException e) {
             e.printStackTrace();
         } catch (Exception e) {
@@ -37,22 +33,12 @@ public class SerialReadThread implements Runnable, SerialPortEventListener {
             e.printStackTrace();
         }
         // 通知数据可用，开始读数据
-        AdhocNode.serialPort.notifyOnDataAvailable(true);
+        serial.serialPort.notifyOnDataAvailable(true);
         readThread = new Thread(this);
         readThread.start();
         System.out.println("接收线程初始化完毕！");
     }
 
-    //    public SerialReadThread(InputStream is)
-//    {
-//        try {
-//            ois = new ObjectInputStream(is);
-//            System.out.println("初始化对象输入流成功！！");
-//        }catch (IOException e){
-//            System.out.println("初始化对象输入流失败！！");
-//            throw new RuntimeException(e);
-//        }
-//    }
     @Override
     public void run() {
         try {
@@ -83,10 +69,10 @@ public class SerialReadThread implements Runnable, SerialPortEventListener {
                     int numBytes = -1;
                     while ((numBytes = is.available()) > 0) {
                         is.read(buf,0,numBytes);
-//                    bytes= Arrays.copyOfRange(buf,0,numBytes);
-//                    adhocNode.dispatch(bytes);
-                        //	将读取到的数据输出到控制台
-//                        System.out.print("收到数据:");
+                        bytes= Arrays.copyOfRange(buf, 0, numBytes);
+                  //将读取到的数据输出到控制台
+                        System.out.print("收到数据:");
+                        serial.setMessage(bytes);
                         System.out.println(new String(buf, 0, numBytes)+"::"+numBytes);
                     }
                 } catch (IOException e) {

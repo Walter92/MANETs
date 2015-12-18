@@ -1,4 +1,4 @@
-package cn.edu.uestc.Adhoc.entity;
+package cn.edu.uestc.Adhoc.entity.route;
 
 public enum StateFlags {
     // The entry is believed Viable.

@@ -1,7 +1,8 @@
-package cn.edu.uestc.Adhoc.entity;
+package cn.edu.uestc.Adhoc.entity.message;
 
 
-import cn.edu.uestc.Adhoc.utils.AdhocUtils;
+import cn.edu.uestc.Adhoc.entity.route.RouteProtocol;
+import cn.edu.uestc.Adhoc.utils.MessageUtils;
 
 import java.util.Arrays;
 
@@ -51,9 +52,9 @@ public class MessageData extends Message {
 
     @Override
     public byte[] getBytes() {
-        byte[] srcByte = AdhocUtils.IntToBytes(getSrcIP());
-        byte[] nextByte = AdhocUtils.IntToBytes(nextIP);
-        byte[] destByte = AdhocUtils.IntToBytes(getDestIP());
+        byte[] srcByte = MessageUtils.IntToBytes(getSrcIP());
+        byte[] nextByte = MessageUtils.IntToBytes(nextIP);
+        byte[] destByte = MessageUtils.IntToBytes(getDestIP());
         int IPAndSoOnLen = 3 * 2 + 1 + 1;//三个IP长度加上数据类型，加上数据长度变量所占长度
         int len = RouteProtocol.PROTOCOL_LEN * 2 + dataLen + IPAndSoOnLen;
         byte[] messageByte = new byte[len];
@@ -80,9 +81,9 @@ public class MessageData extends Message {
     //将byte数组转化为Message对象
     public static MessageData recoverMsg(byte[] bytes) {
         ///恢复byte数组中的数据
-        int srcIP = AdhocUtils.BytesToInt(new byte[]{bytes[3], bytes[4]});
-        int nextIP = AdhocUtils.BytesToInt(new byte[]{bytes[5], bytes[6]});
-        int destIP = AdhocUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
+        int srcIP = MessageUtils.BytesToInt(new byte[]{bytes[3], bytes[4]});
+        int nextIP = MessageUtils.BytesToInt(new byte[]{bytes[5], bytes[6]});
+        int destIP = MessageUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
         byte datalen = bytes[9];
         byte[] information = Arrays.copyOfRange(bytes, 10, bytes.length - 2);
 

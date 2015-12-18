@@ -1,20 +1,20 @@
-package cn.edu.uestc.Adhoc.entity;
+package cn.edu.uestc.Adhoc.entity.adhocNode;
+
+import cn.edu.uestc.Adhoc.entity.message.Message;
+import cn.edu.uestc.Adhoc.entity.message.MessageData;
+import cn.edu.uestc.Adhoc.entity.message.MessageRREP;
+import cn.edu.uestc.Adhoc.entity.message.MessageRREQ;
+import cn.edu.uestc.Adhoc.entity.route.RouteEntry;
+import cn.edu.uestc.Adhoc.entity.route.RouteProtocol;
+import cn.edu.uestc.Adhoc.entity.route.StateFlags;
+import cn.edu.uestc.Adhoc.entity.serial.Serial;
+import cn.edu.uestc.Adhoc.entity.serial.SerialPortEvent;
+import cn.edu.uestc.Adhoc.entity.serial.SerialPortListener;
+import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-
-import org.junit.Test;
-
-import cn.edu.uestc.Adhoc.readAndWrite.SerialReadThread;
-import cn.edu.uestc.Adhoc.readAndWrite.SerialWriteThread;
-import gnu.io.CommPortIdentifier;
-import gnu.io.PortInUseException;
-import gnu.io.SerialPort;
-import gnu.io.UnsupportedCommOperationException;
 
 /**
  * 系统信息的记录暂时还没有得到利用。
@@ -26,26 +26,10 @@ import gnu.io.UnsupportedCommOperationException;
  * 想要设置路由表项的有效时间，可以在新建该表项时增加一个时间戳，当访问该表项时带着时间戳去访问，如果当前时间大于了表项的时间戳
  * n（设置的失效时间）则该表项被判定为无效，应该从路由表中删除。
  */
-public class AdhocNode implements IAdhocNode {
+public class AdhocNode implements IAdhocNode,SerialPortListener {
 
-    public static SerialPort serialPort;
-    public static CommPortIdentifier portId;
-    @SuppressWarnings("rawtypes")
-    public static Enumeration portList;
-
-    //串口输入输出流
-    private InputStream is;
-
-    public InputStream getIs() {
-        return this.is;
-    }
-
-    private OutputStream os;
-
-    public OutputStream getOs() {
-        return this.os;
-    }
-
+    //自主网节点使用的串口对象，同时也是要监听的时间源
+    private Serial serial;
     // 节点IP地址和节点端口名字
     private int ip;
     private String portName;
@@ -56,10 +40,15 @@ public class AdhocNode implements IAdhocNode {
     // 节点的处理器个数以及最大内存
     private SystemInfo systemInfo = new SystemInfo();
 
-    // 读写线程
-    public Thread readThread;
-    public Thread writeThread;
-
+    //初始化块，获取该节点的处理能力
+    {
+        Runtime rt = Runtime.getRuntime();
+        // 获取主机空闲内存
+        long free = rt.freeMemory();
+        systemInfo.setMemorySize((int) (free / 1024));
+        // 获取主机处理器个数
+        systemInfo.setProcessorCount(rt.availableProcessors());
+    }
     // 获取节点IP
     public int getIp() {
         return ip;
@@ -68,7 +57,9 @@ public class AdhocNode implements IAdhocNode {
     public void setIp(int ip) {
         this.ip = ip;
     }
-
+    public Serial getSerial(){
+        return this.serial;
+    }
     // 节点处理器个数
     public int getProcessorCount() {
         return systemInfo.getProcessorCount();
@@ -79,90 +70,27 @@ public class AdhocNode implements IAdhocNode {
         return systemInfo.getMemorySize();
     }
 
-    //初始化块，获取该节点的处理能力
-    {
-        Runtime rt = Runtime.getRuntime();
-        // 获取主机空闲内存
-        long free = rt.freeMemory();
-        systemInfo.setMemorySize((int) (free / 1024));
-        // 获取主机处理器个数
-        systemInfo.setProcessorCount(rt.availableProcessors());
-    }
 
     // 通过串口名字构造一个结点
     public AdhocNode(String portName) {
         // 设置通信的串口
         this.portName = portName;
         this.seqNum = 1;
-        try {
-            init();
-        } catch (Exception e) {
-            System.out.println("节点初始化失败！！");
-            System.exit(1);
-        }
-        // 为节点初始化收发线程
-        System.out.println("节点初始化成功！！");
-        readThread = new Thread(new SerialReadThread(this));
-        readThread.start();
-        System.out.println("接收线程开启，可以接收数据...");
-        writeThread = new Thread(new SerialWriteThread(os));
-
+        serial=new Serial(portName);
+        //节点对串口进行监听
+        serial.addSerialPortListener(this);
+        System.out.println("节点监听串口状态...");
+        serial.read();
+        System.out.println("节点接收线程开启，等待数据到来...");
     }
 
-    public void setWriteThread(SerialWriteThread writeThread) {
-        this.writeThread = new Thread(writeThread);
+    //当串口中数据被更新后执行的方法
+    @Override
+    public void doSerialPortEvent(SerialPortEvent serialPortEvent){
+        this.dataParsing(serial.getMessage());
     }
 
-    @Test
-    // 节点初始化
-    private void init() throws UnsupportedCommOperationException,
-            IOException, PortInUseException {
-        // 首先对电脑的可用端口进行枚举
-        portList = CommPortIdentifier.getPortIdentifiers();
-
-        while (portList.hasMoreElements()) {
-            // 判断端口的类型以及名字，打开需要打开的端口
-            portId = (CommPortIdentifier) portList.nextElement();
-            System.out.println(portId.getName());
-            if (portId.getPortType() == CommPortIdentifier.PORT_SERIAL) {
-                if (portName.equals(portId.getName())) {
-                    try {
-                        // 打开端口，超时时间为2000
-                        serialPort = (SerialPort) portId.open("Adhoc", 2000);
-                        System.out.println(portName + " 串口开启成功.");
-                        break;
-                    } catch (PortInUseException e) {
-                        e.printStackTrace();
-                        throw e;
-                    }
-                }
-            }
-        }
-
-        try {
-            // 初始化输入输出流，为创建收发线程准备
-            is = serialPort.getInputStream();
-            os = serialPort.getOutputStream();
-            System.out.println("初始化端口IO流成功！");
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw e;
-        }
-
-        try {
-            // 设置初始化参数
-            System.out.println("节点初始化参数设置（波特率，数据位，停止位，校验位）...");
-            serialPort.setSerialPortParams(9600, // 波特率
-                    SerialPort.DATABITS_8, // 数据位
-                    SerialPort.STOPBITS_1, // 停止位
-                    SerialPort.PARITY_NONE);// 校验位
-            System.out.println("节点初始化参数设置完毕。");
-        } catch (UnsupportedCommOperationException e) {
-            System.out.println("端口初始化失败！");
-            throw e;
-        }
-    }
-//发起对某节点的路由请求
+    //发起对某节点的路由请求
     @Override
     public void sendRREQ(int destIP) {
         System.out.println("节点" + getIp() + "对节点" + destIP
@@ -177,17 +105,12 @@ public class AdhocNode implements IAdhocNode {
         messageRREQ.setSystemInfo(systemInfo);
         messageRREQ.setHop((byte) 0);
         try {
-            Thread t = new Thread(new SerialWriteThread(os, messageRREQ));
-            t.start();
-            //等待发送结束
-            t.join();
+            serial.write(messageRREQ);
             System.out.println("节点" + getIp() + "对节点" + destIP
                     + "发起路由请求成功，正在等待路由回复...");
         } catch (IOException e) {
             System.out.println("节点" + getIp() + "对节点" + destIP
                     + "发起路由请求失败，发送线程创建失败!");
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
         }
     }
 
@@ -230,15 +153,10 @@ public class AdhocNode implements IAdhocNode {
         System.out.println("节点" + ip + "转发节点" + messageRREQ.getSrcIP() + "对节点" + messageRREQ.getDestIP()
                 + "发起的路由请求...");
         try {
-            Thread t = new Thread(new SerialWriteThread(os, messageRREQ));
-            t.start();
-            //等待发送结束
-            t.join();
+            serial.write(messageRREQ);
             System.out.println("转发路由请求成功!");
         } catch (IOException e) {
             System.out.println("转发路由请求失败，发送线程创建失败!");
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
         }
     }
 
@@ -255,15 +173,10 @@ public class AdhocNode implements IAdhocNode {
         messageRREP.setSystemInfo(systemInfo);
         System.out.println("节点" + ip + "回复节点" + destIP + "的路由请求...");
         try {
-            Thread t = new Thread(new SerialWriteThread(os, messageRREP));
-            t.start();
-            //等待发送结束
-            t.join();
+            serial.write(messageRREP);
             System.out.println("路由回复成功!");
         } catch (IOException e) {
-            System.out.println("路由回复失败，发送线程创建失败!");
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
+            System.out.println("路由回复失败!");
         }
     }
 //在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RREP
@@ -296,15 +209,10 @@ public class AdhocNode implements IAdhocNode {
         System.out.println("节点" + ip + "转发节点" + messageRREP.getSrcIP() + "对节点" + messageRREP.getDestIP()
                 + "的路由回复...");
         try {
-            Thread t = new Thread(new SerialWriteThread(os, messageRREP));
-            t.start();
-            //等待发送结束
-            t.join();
+            serial.write(messageRREP);
             System.out.println("转发路由回复成功!");
         } catch (IOException e) {
-            System.out.println("转发路由回复失败，发送线程创建失败!");
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
+            System.out.println("转发路由回复失败!");
         }
     }
 
@@ -353,21 +261,16 @@ public class AdhocNode implements IAdhocNode {
             }
         }
         //如果路由表中有可用路由则可以向其发送数据
-        MessageData message = new MessageData();
-        message.setDestIP(destIP);
-        message.setSrcIP(ip);
-        message.setNextIP(routeEntry.getNextHopIP());
-        message.setContent("hello".getBytes());
+        MessageData messageData = new MessageData();
+        messageData.setDestIP(destIP);
+        messageData.setSrcIP(ip);
+        messageData.setNextIP(routeEntry.getNextHopIP());
+        messageData.setContent("hello".getBytes());
         try {
-            Thread t = new Thread(new SerialWriteThread(os, message));
-            t.start();
-            //等待发送结束
-            t.join();
+            serial.write(messageData);
             System.out.println("数据发送成功!");
         } catch (IOException e) {
-            System.out.println("数据发送失败，发送线程创建失败!");
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
+            System.out.println("数据发送失败!");
         }
     }
 
@@ -378,7 +281,6 @@ public class AdhocNode implements IAdhocNode {
         if (nextIP != ip)
             return;
         int destIP = messageData.getDestIP();
-
         if (destIP == ip) {
             System.out.println("本节点收到来自" + messageData.getSrcIP()
                     + "的数据，" + "内容为：" + new String(messageData.getContent()));
@@ -400,15 +302,10 @@ public class AdhocNode implements IAdhocNode {
         System.out.println("节点" + ip + "转发节点" + messageData.getSrcIP() + "对节点" + messageData.getDestIP()
                 + "的数据...");
         try {
-            Thread t = new Thread(new SerialWriteThread(os, messageData));
-            t.start();
-            //等待发送结束
-            t.join();
+            serial.write(messageData);
             System.out.println("转发数据成功!");
         } catch (IOException e) {
-            System.out.println("转发数据失败，发送线程创建失败!");
-        } catch (InterruptedException ie) {
-            ie.printStackTrace();
+            System.out.println("转发数据失败!");
         }
     }
 

@@ -1,4 +1,9 @@
-package cn.edu.uestc.Adhoc.entity;
+package cn.edu.uestc.Adhoc.entity.adhocNode;
+
+import cn.edu.uestc.Adhoc.entity.message.MessageData;
+import cn.edu.uestc.Adhoc.entity.message.MessageRREP;
+import cn.edu.uestc.Adhoc.entity.message.MessageRREQ;
+import cn.edu.uestc.Adhoc.entity.route.RouteEntry;
 
 public interface IAdhocNode {
     //路由请求，当要给某一个节点发送数据时没有到该节点的路由时广播路由请求
@@ -35,8 +40,6 @@ public interface IAdhocNode {
     //判断数据包中的源地址是否为自己如果是则接收，如果不是，根据路由表查询去往源地址的下一节点从而转发，转发数据消息
     void forwardDATA(MessageData messageData);
 
-    //查询路由表，若存在目标节点的有效路由则返回true
+    //查询路由表，若存在目标节点的有效路由则返回
     RouteEntry queryRouteTable(int destIP);
-
-
 }
