@@ -162,7 +162,7 @@ public class AdhocNode implements IAdhocNode {
             throw e;
         }
     }
-
+//发起对某节点的路由请求
     @Override
     public void sendRREQ(int destIP) {
         System.out.println("节点" + getIp() + "对节点" + destIP
@@ -197,6 +197,7 @@ public class AdhocNode implements IAdhocNode {
      *                    否则新建一个路由表项，以源地址为键，如果是直接收到源节点的请求，信息中转发节点就是源节点，可以直接用于建立去往源节点
      *                    的下一跳节点，建立反向路由
      */
+    //在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RRE
     @Override
     public void receiveRREQ(MessageRREQ messageRREQ) {
         System.out.println("节点" + getIp() + "收到节点" + messageRREQ.getSrcIP()
@@ -223,6 +224,7 @@ public class AdhocNode implements IAdhocNode {
 
     }
 
+    //如果不是发送给自己的RREQ则将其转发出去
     @Override
     public void forwardRREQ(MessageRREQ messageRREQ) {
         System.out.println("节点" + ip + "转发节点" + messageRREQ.getSrcIP() + "对节点" + messageRREQ.getDestIP()
@@ -240,6 +242,7 @@ public class AdhocNode implements IAdhocNode {
         }
     }
 
+//对请求自己路由回复路由请求
     @Override
     public void sendRREP(int destIP) {
         MessageRREP messageRREP = new MessageRREP();
@@ -263,7 +266,7 @@ public class AdhocNode implements IAdhocNode {
             ie.printStackTrace();
         }
     }
-
+//在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RREP
     @Override
     public void receiveRREP(MessageRREP messageRREP) {
         System.out.println("节点" + ip + "收到节点" + messageRREP.getSrcIP()
@@ -287,7 +290,7 @@ public class AdhocNode implements IAdhocNode {
         //转发
         forwardRREP(messageRREP);
     }
-
+    //如果不是发送给自己的RREP则将其转发出去
     @Override
     public void forwardRREP(MessageRREP messageRREP) {
         System.out.println("节点" + ip + "转发节点" + messageRREP.getSrcIP() + "对节点" + messageRREP.getDestIP()
@@ -305,8 +308,9 @@ public class AdhocNode implements IAdhocNode {
         }
     }
 
+    //在接收线程接收到数据后调用，主要解析数据类型，再恢复为相应的Message对象,并传递给相应的接收方法
     @Override
-    public void dispatch(byte[] bytes) {
+    public void dataParsing(byte[] bytes) {
         byte type = bytes[2];
         Message message = null;
         //如果是数据类型则恢复为数据MessageData，并且交给数据类型接收方法
@@ -336,6 +340,17 @@ public class AdhocNode implements IAdhocNode {
             /**
              *
              */
+            try {
+                Thread.sleep(5000);
+                routeEntry = queryRouteTable(destIP);
+                if(routeEntry==null){
+                    System.out.println("寻找路由失败，未发现有IP为"+destIP+"的节点！");
+                    System.exit(1);
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         //如果路由表中有可用路由则可以向其发送数据
         MessageData message = new MessageData();
