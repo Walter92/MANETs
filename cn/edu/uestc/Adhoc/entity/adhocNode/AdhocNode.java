@@ -13,6 +13,7 @@ import cn.edu.uestc.Adhoc.entity.serial.SerialPortListener;
 import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,17 +27,24 @@ import java.util.Map;
  * 想要设置路由表项的有效时间，可以在新建该表项时增加一个时间戳，当访问该表项时带着时间戳去访问，如果当前时间大于了表项的时间戳
  * n（设置的失效时间）则该表项被判定为无效，应该从路由表中删除。
  */
-public class AdhocNode implements IAdhocNode,SerialPortListener {
+public class AdhocNode implements IAdhocNode, SerialPortListener {
+    private final static int POLLING_COUNT=5;
 
     //自主网节点使用的串口对象，同时也是要监听的时间源
     private Serial serial;
-    // 节点IP地址和节点端口名字
+
+    // 节点IP地址
     private int ip;
+
+    //和开启的串口端口名字
     private String portName;
+
     //节点发出的序列号，该节点每发送出一次RREQ或者RREP时都会在该寻列号上加一，用以标识这是否是一次新的路由请求或者路由回复
     private byte seqNum;
-    //节点的路由表
-    private Map<Integer, RouteEntry> routeTable = new HashMap<Integer, RouteEntry>();
+
+    //节点的路由表,使用同步的路由表
+    private Map<Integer, RouteEntry> routeTable = Collections.synchronizedMap( new HashMap<Integer, RouteEntry>());
+
     // 节点的处理器个数以及最大内存
     private SystemInfo systemInfo = new SystemInfo();
 
@@ -49,17 +57,21 @@ public class AdhocNode implements IAdhocNode,SerialPortListener {
         // 获取主机处理器个数
         systemInfo.setProcessorCount(rt.availableProcessors());
     }
+
     // 获取节点IP
     public int getIp() {
         return ip;
     }
 
+    //设置节点ip
     public void setIp(int ip) {
         this.ip = ip;
     }
-    public Serial getSerial(){
+
+    public Serial getSerial() {
         return this.serial;
     }
+
     // 节点处理器个数
     public int getProcessorCount() {
         return systemInfo.getProcessorCount();
@@ -76,7 +88,7 @@ public class AdhocNode implements IAdhocNode,SerialPortListener {
         // 设置通信的串口
         this.portName = portName;
         this.seqNum = 1;
-        serial=new Serial(portName);
+        serial = new Serial(portName);
         //节点对串口进行监听
         serial.addSerialPortListener(this);
         System.out.println("节点监听串口状态...");
@@ -86,7 +98,7 @@ public class AdhocNode implements IAdhocNode,SerialPortListener {
 
     //当串口中数据被更新后执行的方法
     @Override
-    public void doSerialPortEvent(SerialPortEvent serialPortEvent){
+    public void doSerialPortEvent(SerialPortEvent serialPortEvent) {
         this.dataParsing(serial.getMessage());
     }
 
@@ -120,7 +132,7 @@ public class AdhocNode implements IAdhocNode,SerialPortListener {
      *                    否则新建一个路由表项，以源地址为键，如果是直接收到源节点的请求，信息中转发节点就是源节点，可以直接用于建立去往源节点
      *                    的下一跳节点，建立反向路由
      */
-    //在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RRE
+    //在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RREQ
     @Override
     public void receiveRREQ(MessageRREQ messageRREQ) {
         System.out.println("节点" + getIp() + "收到节点" + messageRREQ.getSrcIP()
@@ -160,7 +172,7 @@ public class AdhocNode implements IAdhocNode,SerialPortListener {
         }
     }
 
-//对请求自己路由回复路由请求
+    //对请求自己路由回复路由请求
     @Override
     public void sendRREP(int destIP) {
         MessageRREP messageRREP = new MessageRREP();
@@ -179,7 +191,8 @@ public class AdhocNode implements IAdhocNode,SerialPortListener {
             System.out.println("路由回复失败!");
         }
     }
-//在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RREP
+
+    //在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RREP
     @Override
     public void receiveRREP(MessageRREP messageRREP) {
         System.out.println("节点" + ip + "收到节点" + messageRREP.getSrcIP()
@@ -203,6 +216,7 @@ public class AdhocNode implements IAdhocNode,SerialPortListener {
         //转发
         forwardRREP(messageRREP);
     }
+
     //如果不是发送给自己的RREP则将其转发出去
     @Override
     public void forwardRREP(MessageRREP messageRREP) {
@@ -244,18 +258,22 @@ public class AdhocNode implements IAdhocNode,SerialPortListener {
         RouteEntry routeEntry = queryRouteTable(destIP);
         if (routeEntry == null) {
             sendRREQ(destIP);
-            //需要等待路由回复.....还没有完成，放一放先....
-            /**
-             *
-             */
+            //需要等待路由回复.....轮番查询五次，每次等待1秒，如果五次查询都失败，则宣布路由寻找失败
             try {
-                Thread.sleep(5000);
-                routeEntry = queryRouteTable(destIP);
-                if(routeEntry==null){
-                    System.out.println("寻找路由失败，未发现有IP为"+destIP+"的节点！");
-                    System.exit(1);
+                for (int i = 0; i < POLLING_COUNT; i++) {
+                    Thread.sleep(1000);
+                    routeEntry = queryRouteTable(destIP);
+                    if (routeEntry == null) {
+                        if(i==POLLING_COUNT-1){
+                            System.out.println("寻找路由失败！");
+                            System.exit(1);
+                        }
+                        continue;
+                    }else{
+                        System.out.println("找到路由！");
+                        break;
+                    }
                 }
-
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
