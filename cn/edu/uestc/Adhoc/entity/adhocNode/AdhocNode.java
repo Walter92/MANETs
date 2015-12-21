@@ -11,6 +11,7 @@ import cn.edu.uestc.Adhoc.entity.serial.Serial;
 import cn.edu.uestc.Adhoc.entity.serial.SerialPortEvent;
 import cn.edu.uestc.Adhoc.entity.serial.SerialPortListener;
 import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
+import cn.edu.uestc.Adhoc.entity.transfer.AdhocTransfer;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -28,10 +29,14 @@ import java.util.Map;
  * n（设置的失效时间）则该表项被判定为无效，应该从路由表中删除。
  */
 public class AdhocNode implements IAdhocNode, SerialPortListener {
+    //轮训次数
     private final static int POLLING_COUNT=5;
 
+    //每次轮训的定时时间
+    private static final int POLING_TIMER=1000;
+
     //自主网节点使用的串口对象，同时也是要监听的时间源
-    private Serial serial;
+    private AdhocTransfer adhocTransfer;
 
     // 节点IP地址
     private int ip;
@@ -68,8 +73,8 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         this.ip = ip;
     }
 
-    public Serial getSerial() {
-        return this.serial;
+    public AdhocTransfer getSerial() {
+        return this.adhocTransfer;
     }
 
     // 节点处理器个数
@@ -88,18 +93,18 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         // 设置通信的串口
         this.portName = portName;
         this.seqNum = 1;
-        serial = new Serial(portName);
+        adhocTransfer = new Serial(portName);
         //节点对串口进行监听
-        serial.addSerialPortListener(this);
+        adhocTransfer.addRecieveListener(this);
         System.out.println("节点监听串口状态...");
-        serial.read();
+        adhocTransfer.recieve();
         System.out.println("节点接收线程开启，等待数据到来...");
     }
 
     //当串口中数据被更新后执行的方法
     @Override
     public void doSerialPortEvent(SerialPortEvent serialPortEvent) {
-        this.dataParsing(serial.getMessage());
+        this.dataParsing(adhocTransfer.getMessage());
     }
 
     //发起对某节点的路由请求
@@ -117,7 +122,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         messageRREQ.setSystemInfo(systemInfo);
         messageRREQ.setHop((byte) 0);
         try {
-            serial.write(messageRREQ);
+            adhocTransfer.send(messageRREQ);
             System.out.println("节点" + getIp() + "对节点" + destIP
                     + "发起路由请求成功，正在等待路由回复...");
         } catch (IOException e) {
@@ -165,7 +170,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         System.out.println("节点" + ip + "转发节点" + messageRREQ.getSrcIP() + "对节点" + messageRREQ.getDestIP()
                 + "发起的路由请求...");
         try {
-            serial.write(messageRREQ);
+            adhocTransfer.send(messageRREQ);
             System.out.println("转发路由请求成功!");
         } catch (IOException e) {
             System.out.println("转发路由请求失败，发送线程创建失败!");
@@ -185,7 +190,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         messageRREP.setSystemInfo(systemInfo);
         System.out.println("节点" + ip + "回复节点" + destIP + "的路由请求...");
         try {
-            serial.write(messageRREP);
+            adhocTransfer.send(messageRREP);
             System.out.println("路由回复成功!");
         } catch (IOException e) {
             System.out.println("路由回复失败!");
@@ -223,7 +228,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         System.out.println("节点" + ip + "转发节点" + messageRREP.getSrcIP() + "对节点" + messageRREP.getDestIP()
                 + "的路由回复...");
         try {
-            serial.write(messageRREP);
+            adhocTransfer.send(messageRREP);
             System.out.println("转发路由回复成功!");
         } catch (IOException e) {
             System.out.println("转发路由回复失败!");
@@ -246,9 +251,11 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
             receiveRREP((MessageRREP) message);
         }
         //如果是路由请求类型则恢复为数据MessageRREQ，并且交给数据类型接收方法
-        else {
+        else if(type==RouteProtocol.RREQ){
             message = MessageRREQ.recoverMsg(bytes);
             receiveRREQ((MessageRREQ) message);
+        }else{
+            System.out.println("无效数据!!");
         }
     }
 
@@ -261,7 +268,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
             //需要等待路由回复.....轮番查询五次，每次等待1秒，如果五次查询都失败，则宣布路由寻找失败
             try {
                 for (int i = 0; i < POLLING_COUNT; i++) {
-                    Thread.sleep(1000);
+                    Thread.sleep(POLING_TIMER);
                     routeEntry = queryRouteTable(destIP);
                     if (routeEntry == null) {
                         if(i==POLLING_COUNT-1){
@@ -285,7 +292,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         messageData.setNextIP(routeEntry.getNextHopIP());
         messageData.setContent("hello".getBytes());
         try {
-            serial.write(messageData);
+            adhocTransfer.send(messageData);
             System.out.println("数据发送成功!");
         } catch (IOException e) {
             System.out.println("数据发送失败!");
@@ -320,7 +327,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         System.out.println("节点" + ip + "转发节点" + messageData.getSrcIP() + "对节点" + messageData.getDestIP()
                 + "的数据...");
         try {
-            serial.write(messageData);
+            adhocTransfer.send(messageData);
             System.out.println("转发数据成功!");
         } catch (IOException e) {
             System.out.println("转发数据失败!");

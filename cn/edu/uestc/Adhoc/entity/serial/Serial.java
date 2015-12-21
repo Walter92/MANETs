@@ -1,6 +1,7 @@
 package cn.edu.uestc.Adhoc.entity.serial;
 
 import cn.edu.uestc.Adhoc.entity.message.Message;
+import cn.edu.uestc.Adhoc.entity.transfer.AdhocTransfer;
 import cn.edu.uestc.Adhoc.readAndWrite.SerialReadThread;
 import cn.edu.uestc.Adhoc.readAndWrite.SerialWriteThread;
 
@@ -14,16 +15,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import java.util.Enumeration;
+import java.util.EventListener;
 import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
  * Created by walter on 15-12-18.
- * 串口的事件监听机制，串口为事件源，一旦串口中的message发生改变(时间)，就会出发自组网节点对象调用dataParsing()
+ * 串口的事件监听机制，串口为事件源，一旦串口中的message发生改变(事件)，就会出发自组网节点对象调用dataParsing()
+ * 通过串口实现传输层接口，为adhoc节点提供传输
  */
-public class Serial {
-    private Vector repository = new Vector();
+public class Serial implements AdhocTransfer{
+    private Vector<EventListener> repository = new Vector<EventListener>();
     private SerialPortListener serialPortListener;
 
     //串口的名字
@@ -38,6 +41,7 @@ public class Serial {
     public  SerialPort serialPort;
     public  CommPortIdentifier portId;
     @SuppressWarnings("rawtypes")
+    //枚举到的本机的串口和并口列表
     public  Enumeration portList;
 
     //串口输入输出流
@@ -74,8 +78,8 @@ public class Serial {
     }
 
     //注册监听器，如果这里没有使用Vector而是使用ArrayList那么要注意同步问题
-    public void addSerialPortListener(SerialPortListener serialPortListener) {
-        repository.addElement(serialPortListener);//这步要注意同步问题
+    public void addRecieveListener(EventListener listener) {
+        repository.addElement(listener);//这步要注意同步问题
     }
 
     //如果这里没有使用Vector而是使用ArrayList那么要注意同步问题
@@ -154,9 +158,9 @@ public class Serial {
             throw e;
         }
     }
-
+    @Override
     //串口的写方法
-    public void write(Message message) throws IOException {
+    public void send(Message message) throws IOException {
         try {
             Runnable writer = new SerialWriteThread(this, message);
             executorService.submit(writer);
@@ -167,8 +171,10 @@ public class Serial {
 
     }
 
+
+    @Override
     //串口对象的读方法
-    public void read() {
+    public void recieve() {
         Runnable reader = new SerialReadThread(this);
         executorService.submit(reader);
     }
