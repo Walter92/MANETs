@@ -22,7 +22,7 @@ public class AdhocTest2 {
 //        messageRREP.setSrcIP(adhocNode.getIp());
 //        messageRREP.setDestIP("def");
 //        new Thread(new SerialWriteThread(adhocNode.getOs(),messageRREP)).start();
-        byte[] bytes = MessageUtils.IntToBytes(500);
+        byte[] bytes = MessageUtils.IntToBytes(4323);
         System.out.println(Arrays.toString(bytes));
         System.out.println(MessageUtils.BytesToInt(bytes));
 //        System.out.print(0x1f4);

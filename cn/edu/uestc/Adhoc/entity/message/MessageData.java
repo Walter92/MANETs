@@ -60,7 +60,7 @@ public class MessageData extends Message {
         byte[] messageByte = new byte[len];
         messageByte[0] = RouteProtocol.frameHeader[0];
         messageByte[1] = RouteProtocol.frameHeader[1];//帧头,0,1
-        messageByte[2] = RouteProtocol.RREQ;//数据类型,2
+        messageByte[2] = RouteProtocol.DATA;//数据类型,2
         messageByte[3] = srcByte[0];
         messageByte[4] = srcByte[1];//源节点,3,4
         messageByte[5] = nextByte[0];
@@ -91,7 +91,7 @@ public class MessageData extends Message {
         message.setSrcIP(srcIP);
         message.setDestIP(destIP);
         message.setType(RouteProtocol.DATA);
-        
+
         return message;
     }
 }

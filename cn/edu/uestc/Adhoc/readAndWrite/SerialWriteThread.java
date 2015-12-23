@@ -21,11 +21,11 @@ public class SerialWriteThread implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("开始发送数据...");
-        while (true) {
+//        System.out.println("开始发送数据...");
+//        while (true) {
             try {
-//                bos.write(message.getBytes());
-                bos.write("hello world...".getBytes());
+                bos.write(message.getBytes());
+//                bos.write("hello world...".getBytes());
                 bos.flush();
                 Thread.sleep(1000);
             } catch (IOException e) {
@@ -34,6 +34,6 @@ public class SerialWriteThread implements Runnable {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
+//        }
     }
 }

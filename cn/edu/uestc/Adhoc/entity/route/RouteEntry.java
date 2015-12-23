@@ -100,4 +100,16 @@ public class RouteEntry {
         Lifetime = lifetime;
     }
 
+    @Override
+    public String toString() {
+        return "RouteEntry{" +
+                "DestIP=" + DestIP +
+                ", SeqNum=" + SeqNum +
+                ", State=" + State +
+                ", HopCount=" + HopCount +
+                ", NextHopIP=" + NextHopIP +
+                ", PrecursorIPs=" + PrecursorIPs +
+                ", Lifetime=" + Lifetime +
+                '}';
+    }
 }

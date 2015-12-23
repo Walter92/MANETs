@@ -63,6 +63,10 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         // 获取主机处理器个数
         systemInfo.setProcessorCount(rt.availableProcessors());
     }
+    //获取路由表,测试用
+    public Map<Integer,RouteEntry> getRouteTable(){
+        return this.routeTable;
+    }
 
     // 获取节点IP
     public int getIp() {
@@ -148,6 +152,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         int key = messageRREQ.getSrcIP();
         //如果收到的信息里面，请求的序列号的键存在，并且小于等于本机所存，则抛弃
         if (routeTable.containsKey(key) && routeTable.get(key).getSeqNum() >= messageRREQ.getSeqNum()) {
+            System.out.println("旧路由序列号，抛弃...");
             return;
         } else {
             //更新自己的路由表，路由表项的信息为该信息的源节点为目的地址，去往该目的地址的下一跳节点即为转发该信息的节点
@@ -157,6 +162,9 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         }
         //如果收到的信息中是寻找本机，则回复路由响应
         if (ip == (messageRREQ.getDestIP())) {
+            System.out.println("本节点收到节点" + messageRREQ.getSrcIP()
+                    + "的路由请求，该节点系统信息如下:\n" +
+                    messageRREQ.getSystemInfo().toString());
             sendRREP(messageRREQ.getSrcIP());
             return;
         }
@@ -275,11 +283,11 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
             sendRREQ(destIP);
             //需要等待路由回复.....轮番查询五次，每次等待1秒，如果五次查询都失败，则宣布路由寻找失败
             try {
-                for (int i = 0; i < POLLING_COUNT; i++) {
+                for (int i = 1; i <= POLLING_COUNT; i++) {
                     Thread.sleep(POLING_TIMER);
                     routeEntry = queryRouteTable(destIP);
                     if (routeEntry == null) {
-                        if(i==POLLING_COUNT-1){
+                        if(i==POLLING_COUNT){
                             System.out.println("寻找路由失败！");
                             System.exit(1);
                         }
@@ -311,14 +319,22 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     public void receiveDATA(MessageData messageData) {
         //收到数据类型的信息时不需要检查序列号
         int nextIP = messageData.getNextIP();
-        if (nextIP != ip)
+        if (nextIP != ip){
+            System.out.println("本节点收到节点"+messageData.getSrcIP()+"发往节点"+messageData.getDestIP()
+                    +"的数据！我不是中转节点，抛弃！");
             return;
+        }
+
         int destIP = messageData.getDestIP();
         if (destIP == ip) {
             System.out.println("本节点收到来自" + messageData.getSrcIP()
                     + "的数据，" + "内容为：" + new String(messageData.getContent()));
             return;
         }
+
+        System.out.println("本节点收到节点"+messageData.getSrcIP()+"发往节点"+messageData.getDestIP()
+                +"的数据！我是中转节点，处理中！");
+
         //查询本节点的路由表，得到去往目的节点的下一跳节点，并改变消息中的下一跳节点地址后转发出去
         int next = queryRouteTable(destIP).getNextHopIP();
         messageData.setNextIP(next);

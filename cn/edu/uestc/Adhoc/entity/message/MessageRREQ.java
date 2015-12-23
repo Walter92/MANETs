@@ -41,7 +41,7 @@ public class MessageRREQ extends Message {
         return hop;
     }
 
-    public void setHop(byte hop) {
+    public void setHop(int hop) {
         this.hop = hop;
     }
 
@@ -49,7 +49,7 @@ public class MessageRREQ extends Message {
         return seqNum;
     }
 
-    public void setSeqNum(byte seqNum) {
+    public void setSeqNum(int seqNum) {
         this.seqNum = seqNum;
     }
 
