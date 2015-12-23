@@ -14,7 +14,10 @@ public class MessageUtils {
     }
 
     public static int BytesToInt(byte[] b) {
-        int number = ((0x00ff & b[1]) << 8) | b[0];
+        int temp = 0x0000ff & b[1];
+        int temp2 = 0x0000ff & b[0];
+        temp <<= 8;
+        int number = temp | temp2;
         return number;
     }
 }

@@ -12,17 +12,17 @@ public class MessageRREP extends Message {
     //系统信息，包含了处理器个数以及内存大小
     private SystemInfo systemInfo;
     //跳数
-    private byte hop;
+    private int hop;
     /**
      * 数据序列号，如果收到的数据小于或者等于节点存储的序列号时，则抛弃该数据，不做处理，避免形成广播风暴
      * 比如说A节点广播了某一次路由请求，B节点收到该请求再次广播，则A节点就会收到该广播，所以通过该属性来判断这次数据帧是同一次广播，进而不做理会
      */
-    protected byte seqNum;
+    protected int seqNum;
 
     public MessageRREP() {
     }
 
-    public MessageRREP(int routeIP, byte hop, byte seqNum, SystemInfo systemInfo) {
+    public MessageRREP(int routeIP, int hop, int seqNum, SystemInfo systemInfo) {
         this.routeIP = routeIP;
         this.systemInfo = systemInfo;
         this.hop = hop;
@@ -37,7 +37,7 @@ public class MessageRREP extends Message {
         this.routeIP = routeIP;
     }
 
-    public byte getHop() {
+    public int getHop() {
         return hop;
     }
 
@@ -45,7 +45,7 @@ public class MessageRREP extends Message {
         this.hop = hop;
     }
 
-    public byte getSeqNum() {
+    public int getSeqNum() {
         return seqNum;
     }
 
@@ -72,10 +72,10 @@ public class MessageRREP extends Message {
                 srcByte[0], srcByte[1],//源节点,3,4
                 routeByte[0], routeByte[1],//转发节点,5,6
                 destByte[0], destByte[1],//目标节点7,8
-                seqNum,//序列号,9
-                hop,//跳数,10
-                sysByte[0], sysByte[1],//系统信息,11,12
-                RouteProtocol.frameEnd[0], RouteProtocol.frameEnd[1]//帧尾,13,14
+                (byte) seqNum,//序列号,9
+                (byte) hop,//跳数,10
+                sysByte[0], sysByte[1],sysByte[2],//系统信息,11,12,13
+                RouteProtocol.frameEnd[0], RouteProtocol.frameEnd[1]//帧尾,14,15
         };
         return messageByte;
     }
@@ -88,7 +88,7 @@ public class MessageRREP extends Message {
         int destIP = MessageUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
         byte seqNum = bytes[9];
         byte hop = bytes[10];
-        SystemInfo sysInfo = SystemInfo.recoverSysInfo(new byte[]{bytes[11], bytes[12]});
+        SystemInfo sysInfo = SystemInfo.recoverSysInfo(new byte[]{bytes[11], bytes[12],bytes[13]});
 
         MessageRREP message = new MessageRREP(routeIP, hop, seqNum, sysInfo);
         message.setSrcIP(srcIP);

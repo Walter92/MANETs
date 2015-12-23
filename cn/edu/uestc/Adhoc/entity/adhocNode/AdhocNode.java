@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 系统信息的记录暂时还没有得到利用。
@@ -48,7 +49,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     private byte seqNum;
 
     //节点的路由表,使用同步的路由表
-    private Map<Integer, RouteEntry> routeTable = Collections.synchronizedMap( new HashMap<Integer, RouteEntry>());
+    private Map<Integer, RouteEntry> routeTable =  new ConcurrentHashMap<Integer, RouteEntry>();
 
     // 节点的处理器个数以及最大内存
     private SystemInfo systemInfo = new SystemInfo();
@@ -102,6 +103,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     }
 
     //当串口中数据被更新后执行的方法
+    //adhocTransfer中message属性被更新后执行
     @Override
     public void doSerialPortEvent(SerialPortEvent serialPortEvent) {
         this.dataParsing(adhocTransfer.getMessage());
@@ -132,10 +134,11 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     }
 
     /**
-     * @param messageRREQ 收到的信息对象
-     *                    首先判断本机路由表中是否有该信息中源地址的表项，如果有并且比收到的信息中的序列号大，则丢弃该信息不做处理
-     *                    否则新建一个路由表项，以源地址为键，如果是直接收到源节点的请求，信息中转发节点就是源节点，可以直接用于建立去往源节点
-     *                    的下一跳节点，建立反向路由
+     * @param messageRREQ
+     * 收到的信息对象
+     * 首先判断本机路由表中是否有该信息中源地址的表项，如果有并且比收到的信息中的序列号大，则丢弃该信息不做处理
+     * 否则新建一个路由表项，以源地址为键，如果是直接收到源节点的请求，信息中转发节点就是源节点，可以直接用于建立去往源节点
+     * 的下一跳节点，建立反向路由
      */
     //在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RREQ
     @Override
@@ -149,7 +152,8 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         } else {
             //更新自己的路由表，路由表项的信息为该信息的源节点为目的地址，去往该目的地址的下一跳节点即为转发该信息的节点
             //RouteEntry(String destIP, int seqNum, StateFlags state, int hopCount, String nextHopIP, int lifetime)
-            routeTable.put(key, new RouteEntry(key, messageRREQ.getRouteIP(), messageRREQ.getSeqNum(), StateFlags.VALID, messageRREQ.getHop(), 0));
+            routeTable.put(key, new RouteEntry(key, messageRREQ.getRouteIP(),
+                    messageRREQ.getSeqNum(), StateFlags.VALID, messageRREQ.getHop(), 0));
         }
         //如果收到的信息中是寻找本机，则回复路由响应
         if (ip == (messageRREQ.getDestIP())) {
@@ -205,13 +209,16 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         int key = messageRREP.getSrcIP();
         //如果收到的信息里面，请求的序列号的键存在，并且小于等于本机所存，则抛弃
         if (routeTable.containsKey(key) && routeTable.get(key).getSeqNum() >= messageRREP.getSeqNum()) {
+            System.out.println("旧路由序列号，抛弃...");
             return;
         } else {
-            routeTable.put(key, new RouteEntry(key, messageRREP.getRouteIP(), messageRREP.getSeqNum(), StateFlags.VALID, messageRREP.getHop(), 0));
+            routeTable.put(key, new RouteEntry(key, messageRREP.getRouteIP()
+                    , messageRREP.getSeqNum(), StateFlags.VALID, messageRREP.getHop(), 0));
         }
         //如果收到的信息中是寻找本机，则回复路由响应
         if (ip == messageRREP.getDestIP()) {
-            System.out.println("本节点发起的对节点" + messageRREP.getDestIP() + "的路由请求成功，收到该节点的路由回复，该节点系统信息如下为," +
+            System.out.println("本节点发起的对节点" + messageRREP.getSrcIP()
+                    + "的路由请求成功，\n收到该节点的路由回复，该节点系统信息如下:\n" +
                     messageRREP.getSystemInfo().toString());
             return;
         }
@@ -225,7 +232,8 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     //如果不是发送给自己的RREP则将其转发出去
     @Override
     public void forwardRREP(MessageRREP messageRREP) {
-        System.out.println("节点" + ip + "转发节点" + messageRREP.getSrcIP() + "对节点" + messageRREP.getDestIP()
+        System.out.println("节点" + ip + "转发节点"
+                + messageRREP.getSrcIP() + "对节点" + messageRREP.getDestIP()
                 + "的路由回复...");
         try {
             adhocTransfer.send(messageRREP);
@@ -255,7 +263,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
             message = MessageRREQ.recoverMsg(bytes);
             receiveRREQ((MessageRREQ) message);
         }else{
-            System.out.println("无效数据!!");
+            System.out.println("无效数据格式!!");
         }
     }
 

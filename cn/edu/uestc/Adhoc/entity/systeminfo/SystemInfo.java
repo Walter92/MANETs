@@ -1,5 +1,7 @@
 package cn.edu.uestc.Adhoc.entity.systeminfo;
 
+import cn.edu.uestc.Adhoc.utils.MessageUtils;
+
 /**
  * Created by walter on 15-12-3.
  */
@@ -41,14 +43,15 @@ public class SystemInfo {
     }
 
     public byte[] getBytes() {
-        byte[] sysInfo = new byte[2];
+        byte[] sysInfo = new byte[3];
         sysInfo[0] = (byte) processorCount;
-        sysInfo[1] = (byte) memorySize;
+        sysInfo[1] = MessageUtils.IntToBytes(memorySize)[0];
+        sysInfo[2] = MessageUtils.IntToBytes(memorySize)[1];
         return sysInfo;
     }
 
     public static SystemInfo recoverSysInfo(byte[] bytes) {
-        return new SystemInfo(bytes[0], bytes[1]);
+        return new SystemInfo(bytes[0], MessageUtils.BytesToInt(new byte[]{bytes[1],bytes[2]}));
     }
 
     @Override

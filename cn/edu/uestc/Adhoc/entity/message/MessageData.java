@@ -91,8 +91,7 @@ public class MessageData extends Message {
         message.setSrcIP(srcIP);
         message.setDestIP(destIP);
         message.setType(RouteProtocol.DATA);
-
-
+        
         return message;
     }
 }
