@@ -20,7 +20,7 @@ public interface IAdhocNode {
     void forwardRREQ(MessageRREQ messageRREQ);
 
     //回复路由响应RREP
-    void sendRREP(int destIP);
+    void sendRREP(MessageRREP messageRREP);
 
     //接收路由响应RREP
     void receiveRREP(MessageRREP messageRREP);

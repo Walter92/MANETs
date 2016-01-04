@@ -15,7 +15,7 @@ public class AdhocTest {
     public static void main(String[] args) {
         AdhocNode adhocNode = AdhocNodeFactory.getInstance("usb0");
         adhocNode.setIp(1);
-        System.out.println("ip"+adhocNode.getIp());
+        System.out.println("ip "+adhocNode.getIp());
         System.out.println(adhocNode.getMemorySize());
         System.out.println(adhocNode.getProcessorCount());
         System.out.println(adhocNode.getSerial());

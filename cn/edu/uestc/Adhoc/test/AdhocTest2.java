@@ -26,5 +26,6 @@ public class AdhocTest2 {
         System.out.println(Arrays.toString(bytes));
         System.out.println(MessageUtils.BytesToInt(bytes));
 //        System.out.print(0x1f4);
+
     }
 }

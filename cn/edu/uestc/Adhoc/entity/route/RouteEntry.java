@@ -1,5 +1,7 @@
 package cn.edu.uestc.Adhoc.entity.route;
 
+import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
+
 import java.util.HashSet;
 
 /**
@@ -18,70 +20,74 @@ import java.util.HashSet;
 public class RouteEntry {
 
     //目标节点的IP地址
-    private int DestIP;
+    private int destIP;
     //目标节点的序列号
-    private int SeqNum;
+    private int seqNum;
     //路由表项当前状态
-    private StateFlags State;
+    private StateFlags state;
     //去往目标节点的跳数
-    private int HopCount;
+    private int hopCount;
     //去往目标节点的下一节点的IP地址
-    private int NextHopIP;
+    private int nextHopIP;
 
     private HashSet<Integer> PrecursorIPs = new HashSet<Integer>();
 
     //在这个时间内，该表项有效
-    private int Lifetime;
+    private int lifeTime;
 
 
-    public RouteEntry(int destIP, int nextHopIP, int seqNum, StateFlags state, int hopCount, int lifetime) {
-        DestIP = destIP;
-        SeqNum = seqNum;
-        State = state;
-        HopCount = hopCount;
-        NextHopIP = nextHopIP;
-        Lifetime = lifetime;
+
+    //目标节点的系统信息
+    SystemInfo systemInfo;
+
+    public RouteEntry(int destIP, int nextHopIP, int seqNum, StateFlags state, int hopCount, int lifeTime,SystemInfo systemInfo) {
+        this.destIP = destIP;
+        this.seqNum = seqNum;
+        this.state = state;
+        this.hopCount = hopCount;
+        this.nextHopIP = nextHopIP;
+        this.lifeTime = lifeTime;
+        this.systemInfo=systemInfo;
     }
 
-    //setter和getter方法
     public int getDestIP() {
-        return DestIP;
+        return destIP;
     }
 
     public void setDestIP(int destIP) {
-        DestIP = destIP;
+        this.destIP = destIP;
     }
 
     public int getSeqNum() {
-        return SeqNum;
+        return seqNum;
     }
 
     public void setSeqNum(int seqNum) {
-        SeqNum = seqNum;
+        this.seqNum = seqNum;
     }
 
     public StateFlags getState() {
-        return State;
+        return state;
     }
 
     public void setState(StateFlags state) {
-        State = state;
+        this.state = state;
     }
 
     public int getHopCount() {
-        return HopCount;
+        return hopCount;
     }
 
     public void setHopCount(int hopCount) {
-        HopCount = hopCount;
+        this.hopCount = hopCount;
     }
 
     public int getNextHopIP() {
-        return NextHopIP;
+        return nextHopIP;
     }
 
     public void setNextHopIP(int nextHopIP) {
-        NextHopIP = nextHopIP;
+        this.nextHopIP = nextHopIP;
     }
 
     public HashSet<Integer> getPrecursorIPs() {
@@ -92,24 +98,33 @@ public class RouteEntry {
         PrecursorIPs = precursorIPs;
     }
 
-    public int getLifetime() {
-        return Lifetime;
+    public int getLifeTime() {
+        return lifeTime;
     }
 
-    public void setLifetime(int lifetime) {
-        Lifetime = lifetime;
+    public void setLifeTime(int lifeTime) {
+        this.lifeTime = lifeTime;
+    }
+
+    public SystemInfo getSystemInfo() {
+        return systemInfo;
+    }
+
+    public void setSystemInfo(SystemInfo systemInfo) {
+        this.systemInfo = systemInfo;
     }
 
     @Override
     public String toString() {
         return "RouteEntry{" +
-                "DestIP=" + DestIP +
-                ", SeqNum=" + SeqNum +
-                ", State=" + State +
-                ", HopCount=" + HopCount +
-                ", NextHopIP=" + NextHopIP +
+                "destIP=" + destIP +
+                ", seqNum=" + seqNum +
+                ", state=" + state +
+                ", hopCount=" + hopCount +
+                ", nextHopIP=" + nextHopIP +
                 ", PrecursorIPs=" + PrecursorIPs +
-                ", Lifetime=" + Lifetime +
+                ", lifeTime=" + lifeTime +
+                ", systemInfo=" + systemInfo +
                 '}';
     }
 }
