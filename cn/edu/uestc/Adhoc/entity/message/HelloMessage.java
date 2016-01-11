@@ -4,6 +4,7 @@ import cn.edu.uestc.Adhoc.entity.route.RouteProtocol;
 import cn.edu.uestc.Adhoc.utils.MessageUtils;
 
 /**
+ * hello 信息类
  * Created by walter on 16-1-11.
  */
 public class HelloMessage extends Message {
@@ -14,6 +15,7 @@ public class HelloMessage extends Message {
         this.destIP=destIp;
     }
 
+    //编码，将hello报文
     @Override
     public byte[] getBytes() {
         byte[] srcByte = MessageUtils.IntToBytes(getSrcIP());
@@ -36,8 +38,6 @@ public class HelloMessage extends Message {
         ///恢复byte数组中的数据
         int srcIP = MessageUtils.BytesToInt(new byte[]{bytes[3], bytes[4]});
         int destIP = MessageUtils.BytesToInt(new byte[]{bytes[5], bytes[6]});
-        byte seqNum = bytes[9];
-        byte hop = bytes[10];
 
         HelloMessage message = new HelloMessage(srcIP, destIP);
         message.setType(RouteProtocol.HELLO);

@@ -78,7 +78,7 @@ public class Serial implements AdhocTransfer{
     }
 
     //注册监听器，如果这里没有使用Vector而是使用ArrayList那么要注意同步问题
-    public void addRecieveListener(EventListener listener) {
+    public void addReceiveListener(EventListener listener) {
         repository.addElement(listener);//这步要注意同步问题
     }
 
@@ -96,7 +96,7 @@ public class Serial implements AdhocTransfer{
         repository.remove(serialPortListener);//这步要注意同步问题
     }
 
-//更新serial对象的message，该动作将会引发事件
+    //更新serial对象的message，该动作将会引发事件
     public void setMessage(byte[] message) {
         boolean bool = false;
         if (message == null && this.message != null)

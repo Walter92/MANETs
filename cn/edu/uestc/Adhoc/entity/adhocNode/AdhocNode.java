@@ -1,9 +1,6 @@
 package cn.edu.uestc.Adhoc.entity.adhocNode;
 
-import cn.edu.uestc.Adhoc.entity.message.Message;
-import cn.edu.uestc.Adhoc.entity.message.MessageData;
-import cn.edu.uestc.Adhoc.entity.message.MessageRREP;
-import cn.edu.uestc.Adhoc.entity.message.MessageRREQ;
+import cn.edu.uestc.Adhoc.entity.message.*;
 import cn.edu.uestc.Adhoc.entity.route.RouteEntry;
 import cn.edu.uestc.Adhoc.entity.route.RouteProtocol;
 import cn.edu.uestc.Adhoc.entity.route.StateFlags;
@@ -14,8 +11,7 @@ import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
 import cn.edu.uestc.Adhoc.entity.transfer.AdhocTransfer;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -51,7 +47,10 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     private Map<Integer, RouteEntry> routeTable =  new ConcurrentHashMap<Integer, RouteEntry>();
 
     //先驱列表，存储了本节点周围的节点地址，其存在的目的主要用于路由维护
-    private HashSet<Integer> precursorIPs = new HashSet<Integer>();
+    private HashSet<Integer> precursorIPs = (HashSet<Integer>)Collections.synchronizedCollection(new HashSet<Integer>());
+
+    //接收到的hello报文的发送者队列，当收到某hello报文时将其加入到队列中，路由维护线程从对列中取出数据，用于更新路由表项的生存时间
+    private Queue<Integer> helloIP = new ArrayDeque<Integer>();
 
     // 节点的处理器个数以及最大内存
     private SystemInfo systemInfo = new SystemInfo();
@@ -109,7 +108,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         this.seqNum = 1;
         adhocTransfer = new Serial(portName);
         //节点对串口进行监听
-        adhocTransfer.addRecieveListener(this);
+        adhocTransfer.addReceiveListener(this);
         System.out.println("节点监听串口状态...");
         adhocTransfer.recieve();
         System.out.println("节点接收线程开启，等待数据到来...");
@@ -293,6 +292,8 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
             receiveRREQ((MessageRREQ) message);
         }else if(type==RouteProtocol.HELLO){
             //交给处理hello报文的处理函数
+            message = HelloMessage.recoverMsg(bytes);
+            helloHandler(message);
         }else {
             System.out.println("无效数据格式!!");
         }
@@ -391,7 +392,54 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         return null;
     }
 
-    public void helloHandler(){
+    //将接收到的hello报文的源节点IP加入到队列中
+    public void helloHandler(Message message){
+        int srdIP = message.getSrcIP();
+        helloIP.add(srdIP);
+    }
 
+
+
+    //路由表维护函数，根据helloIP队列中的IP来维护路由表，在一定时间内没有收到某一节节点的hello报文，则将以该节点为下一中转节点的路由表
+    //可用状态设置为不可用，并发送RRER
+    public void maintainRouteTable(){
+        Thread maintainRouteThread = new Thread(new Runnable() {
+            //维护线程
+            @Override
+            public void run() {
+                while(true){
+                    int ip1 = helloIP.remove();
+                    Set<Integer> DestSet = getDestIPByNextIP(ip1);
+                    Iterator<Integer> it = DestSet.iterator();
+                    while(it.hasNext()){
+                        routeTable.get(it.next()).setLifeTime(RouteEntry.MAX_LIFETIME);
+                    }
+                }
+            }
+        });
+
+        //将维护线程设置为守护线程
+        maintainRouteThread.setDaemon(true);
+
+        maintainRouteThread.start();
+
+    }
+
+
+    //根据下一跳节点的ip获取目的节点的ip集合，根据该set查找route有效可用的表项
+    private Set<Integer> getDestIPByNextIP(int ip){
+        Set<Integer> sets = new HashSet<Integer>();
+        Iterator<Integer> it = routeTable.keySet().iterator();
+        RouteEntry routeEntry=null;
+        int destIP;
+        while(it.hasNext()){
+            destIP=it.next();
+            routeEntry=routeTable.get(destIP);
+            if(routeEntry.getNextHopIP()==ip&&routeEntry.getState()==StateFlags.VALID)
+            {
+                sets.add(destIP);
+            }
+        }
+        return sets;
     }
 }

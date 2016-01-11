@@ -18,6 +18,7 @@ import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
  * 9. 其他状态和路由标志：如路由有效、无效、可修复、正在修复。
  */
 public class RouteEntry {
+    public static final  long MAX_LIFETIME=1000*60*10;
 
     //目标节点的IP地址
     private int destIP;
@@ -34,14 +35,14 @@ public class RouteEntry {
 //    private HashSet<Integer> PrecursorIPs = new HashSet<Integer>();
 
     //在这个时间内，该表项有效
-    private int lifeTime;
+    private long lifeTime;
 
 
 
     //目标节点的系统信息
     SystemInfo systemInfo;
 
-    public RouteEntry(int destIP, int nextHopIP, int seqNum, StateFlags state, int hopCount, int lifeTime,SystemInfo systemInfo) {
+    public RouteEntry(int destIP, int nextHopIP, int seqNum, StateFlags state, int hopCount, long lifeTime,SystemInfo systemInfo) {
         this.destIP = destIP;
         this.seqNum = seqNum;
         this.state = state;
@@ -99,11 +100,11 @@ public class RouteEntry {
 //        PrecursorIPs = precursorIPs;
 //    }
 
-    public int getLifeTime() {
+    public long getLifeTime() {
         return lifeTime;
     }
 
-    public void setLifeTime(int lifeTime) {
+    public void setLifeTime(long lifeTime) {
         this.lifeTime = lifeTime;
     }
 
@@ -126,5 +127,21 @@ public class RouteEntry {
                 ", lifeTime=" + lifeTime +
                 ", systemInfo=" + systemInfo +
                 '}';
+    }
+    
+    public void setInvalid(){
+        while(true){
+            try {
+                Thread.sleep(1000);
+                this.lifeTime--;
+                if(lifeTime==0){
+                    this.state=StateFlags.INVALID;
+                    break;
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

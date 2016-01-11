@@ -14,7 +14,7 @@ import java.util.EventListener;
 public interface AdhocTransfer {
     void recieve();
     void send(Message message) throws IOException;
-    void addRecieveListener(EventListener listener);
+    void addReceiveListener(EventListener listener);
     byte[] getMessage();
     void setMessage(byte[] message);
     OutputStream getOs();
