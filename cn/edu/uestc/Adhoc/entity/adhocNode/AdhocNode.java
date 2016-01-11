@@ -14,8 +14,7 @@ import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
 import cn.edu.uestc.Adhoc.entity.transfer.AdhocTransfer;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,6 +49,9 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
 
     //节点的路由表,使用同步的路由表
     private Map<Integer, RouteEntry> routeTable =  new ConcurrentHashMap<Integer, RouteEntry>();
+
+    //先驱列表，存储了本节点周围的节点地址，其存在的目的主要用于路由维护
+    private HashSet<Integer> precursorIPs = new HashSet<Integer>();
 
     // 节点的处理器个数以及最大内存
     private SystemInfo systemInfo = new SystemInfo();
@@ -92,6 +94,13 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         return systemInfo.getMemorySize();
     }
 
+    public HashSet<Integer> getPrecursorIPs() {
+        return precursorIPs;
+    }
+
+    public void setPrecursorIPs(HashSet<Integer> precursorIPs) {
+        this.precursorIPs = precursorIPs;
+    }
 
     // 通过串口名字构造一个结点
     public AdhocNode(String portName) {
@@ -149,6 +158,8 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     public void receiveRREQ(MessageRREQ messageRREQ) {
         System.out.println("节点" + getIp() + "收到节点" + messageRREQ.getSrcIP()
                 + "对节点" + messageRREQ.getDestIP() + "发起的路由请求，正在处理中...");
+        //将转发该消息的节点地址加入到先驱列表中
+        precursorIPs.add(messageRREQ.getRouteIP());
         int key = messageRREQ.getSrcIP();
         //如果收到的信息里面，请求的序列号的键存在，并且小于等于本机所存，则抛弃
         if (routeTable.containsKey(key) && routeTable.get(key).getSeqNum() >= messageRREQ.getSeqNum()) {
@@ -222,6 +233,8 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     public void receiveRREP(MessageRREP messageRREP) {
         System.out.println("节点" + ip + "收到节点" + messageRREP.getSrcIP()
                 + "对节点" + messageRREP.getDestIP() + "发起的路由回复，正在处理中...");
+        //将转发该消息的节点地址加入到先驱列表中
+        precursorIPs.add(messageRREP.getRouteIP());
         int key = messageRREP.getSrcIP();
         //如果收到的信息里面，请求的序列号的键存在，并且小于等于本机所存，则抛弃
         if (routeTable.containsKey(key) && routeTable.get(key).getSeqNum() >= messageRREP.getSeqNum()) {
@@ -278,20 +291,24 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         else if(type==RouteProtocol.RREQ){
             message = MessageRREQ.recoverMsg(bytes);
             receiveRREQ((MessageRREQ) message);
-        }else{
+        }else if(type==RouteProtocol.HELLO){
+            //交给处理hello报文的处理函数
+        }else {
             System.out.println("无效数据格式!!");
         }
     }
 
     @Override
-    public void sendMessage(int destIP) {
+    public void sendMessage(String context,int destIP) {
         //节点想要给目的节点发送消息，首先查询本节点中路由表是否有可用的有效路由，如果没有就发起路由请求
         RouteEntry routeEntry = queryRouteTable(destIP);
         if (routeEntry == null) {
+            System.out.println("本机还没有到节点"+destIP+"的路由，开始路由请求...");
             sendRREQ(destIP);
             //需要等待路由回复.....轮番查询五次，每次等待1秒，如果五次查询都失败，则宣布路由寻找失败
             try {
                 for (int i = 1; i <= POLLING_COUNT; i++) {
+                    System.out.println("等待回复："+i);
                     Thread.sleep(POLING_TIMER);
                     routeEntry = queryRouteTable(destIP);
                     if (routeEntry == null) {
@@ -314,7 +331,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         messageData.setDestIP(destIP);
         messageData.setSrcIP(ip);
         messageData.setNextIP(routeEntry.getNextHopIP());
-        messageData.setContent("hello".getBytes());
+        messageData.setContent(context.getBytes());
         try {
             adhocTransfer.send(messageData);
             System.out.println("数据发送成功!");
@@ -372,5 +389,9 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         if (routeEntry != null && routeEntry.getState() == StateFlags.VALID)
             return routeEntry;
         return null;
+    }
+
+    public void helloHandler(){
+
     }
 }

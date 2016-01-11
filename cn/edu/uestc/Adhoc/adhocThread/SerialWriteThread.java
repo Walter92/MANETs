@@ -1,4 +1,4 @@
-package cn.edu.uestc.Adhoc.readAndWrite;
+package cn.edu.uestc.Adhoc.adhocThread;
 
 import cn.edu.uestc.Adhoc.entity.message.Message;
 import cn.edu.uestc.Adhoc.entity.serial.Serial;

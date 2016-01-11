@@ -10,7 +10,7 @@ public interface IAdhocNode {
     //路由回应，当找到路由节点时回复寻找节点的节点
     //路由错误，没有找到路由，可能是节点中没有要找的节点
     //数据发送，表示该帧是一串数据，不是任何控制信息，按照路由途径发送即可
-    //发送路由请求RRRQ
+    //发送路由请求RRQ
     void sendRREQ(int destIP);
 
     //接收路由请求RREQ
@@ -32,7 +32,7 @@ public interface IAdhocNode {
     void dataParsing(byte[] bytes);
 
     //发送数据消息
-    void sendMessage(int destIP);
+    void sendMessage(String context,int destIP);
 
     //接收数据消息
     void receiveDATA(MessageData messageData);

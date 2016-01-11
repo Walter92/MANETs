@@ -3,6 +3,8 @@ package cn.edu.uestc.Adhoc.entity.transfer;
 import cn.edu.uestc.Adhoc.entity.message.Message;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.EventListener;
 
 /**
@@ -15,5 +17,7 @@ public interface AdhocTransfer {
     void addRecieveListener(EventListener listener);
     byte[] getMessage();
     void setMessage(byte[] message);
+    OutputStream getOs();
+    InputStream getIs();
 
 }

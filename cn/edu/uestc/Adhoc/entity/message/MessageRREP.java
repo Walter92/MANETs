@@ -61,6 +61,7 @@ public class MessageRREP extends Message {
         this.systemInfo = systemInfo;
     }
 
+    //信息编码
     public byte[] getBytes() {
         byte[] srcByte = MessageUtils.IntToBytes(getSrcIP());
         byte[] routeByte = MessageUtils.IntToBytes(routeIP);
@@ -80,7 +81,7 @@ public class MessageRREP extends Message {
         return messageByte;
     }
 
-    //将byte数组转化为Message对象
+    //将byte数组转化为Message对象，解码
     public static MessageRREP recoverMsg(byte[] bytes) {
         ///恢复byte数组中的数据
         int srcIP = MessageUtils.BytesToInt(new byte[]{bytes[3], bytes[4]});

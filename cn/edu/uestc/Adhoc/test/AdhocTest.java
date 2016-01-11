@@ -8,35 +8,50 @@ import cn.edu.uestc.Adhoc.entity.message.MessageRREQ;
 import cn.edu.uestc.Adhoc.entity.route.RouteEntry;
 import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class AdhocTest {
 
     public static void main(String[] args) {
-        AdhocNode adhocNode = AdhocNodeFactory.getInstance("usb0");
+       final AdhocNode adhocNode = AdhocNodeFactory.getInstance("usb0");
         adhocNode.setIp(1);
-        System.out.println("ip "+adhocNode.getIp());
-        System.out.println(adhocNode.getMemorySize());
-        System.out.println(adhocNode.getProcessorCount());
-        System.out.println(adhocNode.getSerial());
-        try{
-            Thread.sleep(1000);
-        }catch (Exception e){
+//        try{
+//            Thread.sleep(1000);
+//        }catch (Exception e){
+////
+////        }
+//        ArrayList list=new ArrayList();
+//        java.util.Collections.shuffle();
 
-        }
 
-        MessageRREP messageRREP = new MessageRREP(1,2,2,new SystemInfo(2,41911));
-        messageRREP.setSrcIP(6);
+       final MessageRREP messageRREP = new MessageRREP(2,2,2,new SystemInfo(2,41911));
+        messageRREP.setSrcIP(2);
         messageRREP.setDestIP(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    Thread.sleep(2000);
+                    adhocNode.getSerial().setMessage(messageRREP.getBytes());
+                }catch (Exception e){
+
+                }
+            }
+        }).start();
+
+        adhocNode.sendMessage("hello",2);
+
 //        System.out.println(adhocNode);
         MessageRREQ messageRREQ = new MessageRREQ(3,4,5,new SystemInfo(3,32321));
         messageRREQ.setDestIP(6);
         messageRREQ.setSrcIP(7);
         int conut=0;
 
-        MessageData messageData = new MessageData(1,5,"hello".getBytes());
+        MessageData messageData = new MessageData(4,5,"hello".getBytes());
         messageData.setSrcIP(3);
-        messageData.setDestIP(1);
+        messageData.setDestIP(2);
         while(true) {
             try {
 //                conut++;

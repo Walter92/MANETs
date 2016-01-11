@@ -1,4 +1,4 @@
-package cn.edu.uestc.Adhoc.readAndWrite;
+package cn.edu.uestc.Adhoc.adhocThread;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
