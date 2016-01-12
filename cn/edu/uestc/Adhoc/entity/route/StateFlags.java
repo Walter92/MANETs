@@ -11,12 +11,10 @@ public enum StateFlags {
     REPAIRING,
     /**
      * The entry was valid but has expired but should not be deleted yet.
-     * <p/>
      * TODO: This state was not clearly called for in the RFC.
      * <p/>
      * An expired routing table entry SHOULD NOT be expunged before
      * (current_time + DELETE_PERIOD).
-     * <p/>
      * Maybe this state should really be REPAIRABLE.
      */
     EXPIRED,

@@ -19,6 +19,12 @@ public class SystemInfo {
 //    }
 
     public SystemInfo() {
+        Runtime rt = Runtime.getRuntime();
+        // 获取主机空闲内存
+        long free = rt.freeMemory();
+        this.memorySize = (int) (free / 1024);
+        // 获取主机处理器个数
+        this.processorCount = rt.availableProcessors();
     }
 
     public SystemInfo(int processorCount, int memorySize) {
@@ -51,7 +57,7 @@ public class SystemInfo {
     }
 
     public static SystemInfo recoverSysInfo(byte[] bytes) {
-        return new SystemInfo(bytes[0], MessageUtils.BytesToInt(new byte[]{bytes[1],bytes[2]}));
+        return new SystemInfo(bytes[0], MessageUtils.BytesToInt(new byte[]{bytes[1], bytes[2]}));
     }
 
     @Override

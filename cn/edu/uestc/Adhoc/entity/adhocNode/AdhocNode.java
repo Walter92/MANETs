@@ -55,15 +55,6 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     // 节点的处理器个数以及最大内存
     private SystemInfo systemInfo = new SystemInfo();
 
-    //初始化块，获取该节点的处理能力
-    {
-        Runtime rt = Runtime.getRuntime();
-        // 获取主机空闲内存
-        long free = rt.freeMemory();
-        systemInfo.setMemorySize((int) (free / 1024));
-        // 获取主机处理器个数
-        systemInfo.setProcessorCount(rt.availableProcessors());
-    }
     //获取路由表,测试用
     public Map<Integer,RouteEntry> getRouteTable(){
         return this.routeTable;
@@ -83,14 +74,9 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         return this.adhocTransfer;
     }
 
-    // 节点处理器个数
-    public int getProcessorCount() {
-        return systemInfo.getProcessorCount();
-    }
-
-    // 节点最大内存
-    public long getMemorySize() {
-        return systemInfo.getMemorySize();
+    // 节点系统信息
+    public SystemInfo getSystemInfo() {
+        return systemInfo;
     }
 
     public HashSet<Integer> getPrecursorIPs() {
@@ -404,15 +390,22 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     //可用状态设置为不可用，并发送RRER
     public void maintainRouteTable(){
         Thread maintainRouteThread = new Thread(new Runnable() {
-            //维护线程
+            //路由维护线程
             @Override
             public void run() {
+                int ip1=0;
+                Set<Integer> DestSet;
+                Iterator<Integer> it;
                 while(true){
-                    int ip1 = helloIP.remove();
-                    Set<Integer> DestSet = getDestIPByNextIP(ip1);
-                    Iterator<Integer> it = DestSet.iterator();
-                    while(it.hasNext()){
-                        routeTable.get(it.next()).setLifeTime(RouteEntry.MAX_LIFETIME);
+                    if(helloIP.size()>0){
+                        ip1 = helloIP.remove();
+                        if(ip1!=0){
+                                DestSet = getDestIPByNextIP(ip1);
+                                it = DestSet.iterator();
+                                while(it.hasNext()){
+                                    routeTable.get(it.next()).setLifeTime(RouteEntry.MAX_LIFETIME);
+                            }
+                         }
                     }
                 }
             }
@@ -424,7 +417,6 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         maintainRouteThread.start();
 
     }
-
 
     //根据下一跳节点的ip获取目的节点的ip集合，根据该set查找route有效可用的表项
     private Set<Integer> getDestIPByNextIP(int ip){
