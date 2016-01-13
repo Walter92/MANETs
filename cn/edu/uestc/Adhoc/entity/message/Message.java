@@ -9,7 +9,7 @@ public abstract class Message {
     //源节点的IP
     protected int srcIP;
     //目的节点的IP
-    protected int destIP;
+    protected int destinationIP;
 
     public int getSrcIP() {
         return srcIP;
@@ -19,12 +19,12 @@ public abstract class Message {
         this.srcIP = srcIP;
     }
 
-    public int getDestIP() {
-        return destIP;
+    public int getDestinationIP() {
+        return destinationIP;
     }
 
-    public void setDestIP(int destIP) {
-        this.destIP = destIP;
+    public void setDestinationIP(int destinationIP) {
+        this.destinationIP = destinationIP;
     }
 
     public int getType() {

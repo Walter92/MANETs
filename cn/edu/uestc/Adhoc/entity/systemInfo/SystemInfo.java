@@ -1,4 +1,4 @@
-package cn.edu.uestc.Adhoc.entity.systeminfo;
+package cn.edu.uestc.Adhoc.entity.systemInfo;
 
 import cn.edu.uestc.Adhoc.utils.MessageUtils;
 
@@ -25,6 +25,7 @@ public class SystemInfo {
         this.memorySize = (int) (free / 1024);
         // 获取主机处理器个数
         this.processorCount = rt.availableProcessors();
+
     }
 
     public SystemInfo(int processorCount, int memorySize) {

@@ -1,8 +1,7 @@
 package cn.edu.uestc.Adhoc.adhocThread;
 
 import cn.edu.uestc.Adhoc.entity.adhocNode.AdhocNode;
-import cn.edu.uestc.Adhoc.entity.message.HelloMessage;
-import cn.edu.uestc.Adhoc.entity.message.Message;
+import cn.edu.uestc.Adhoc.entity.message.MessageHello;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,7 +28,7 @@ public class HelloThread implements Runnable{
         while(true){
             for(Integer integer:adhocNode.getPrecursorIPs()){
                 try {
-                    os.write(new HelloMessage(adhocNode.getIp(),integer).getBytes());
+                    os.write(new MessageHello(adhocNode.getIp(),integer).getBytes());
                     os.flush();
                 } catch (IOException e) {
                     e.printStackTrace();

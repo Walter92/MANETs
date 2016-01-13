@@ -54,7 +54,7 @@ public class MessageData extends Message {
     public byte[] getBytes() {
         byte[] srcByte = MessageUtils.IntToBytes(getSrcIP());
         byte[] nextByte = MessageUtils.IntToBytes(nextIP);
-        byte[] destByte = MessageUtils.IntToBytes(getDestIP());
+        byte[] destinationByte = MessageUtils.IntToBytes(getDestinationIP());
         int IPAndSoOnLen = 3 * 2 + 1 + 1;//三个IP长度加上数据类型，加上数据长度变量所占长度
         int len = RouteProtocol.PROTOCOL_LEN * 2 + dataLen + IPAndSoOnLen;
         byte[] messageByte = new byte[len];
@@ -65,8 +65,8 @@ public class MessageData extends Message {
         messageByte[4] = srcByte[1];//源节点,3,4
         messageByte[5] = nextByte[0];
         messageByte[6] = nextByte[1];//转发节点,5,6
-        messageByte[7] = destByte[0];
-        messageByte[8] = destByte[1];//目标节点7,8
+        messageByte[7] = destinationByte[0];
+        messageByte[8] = destinationByte[1];//目标节点7,8
         messageByte[9] = (byte) dataLen;
         //待发送的字节数组
         for (int i = 10; i < len - 2; i++) {
@@ -83,13 +83,13 @@ public class MessageData extends Message {
         ///恢复byte数组中的数据
         int srcIP = MessageUtils.BytesToInt(new byte[]{bytes[3], bytes[4]});
         int nextIP = MessageUtils.BytesToInt(new byte[]{bytes[5], bytes[6]});
-        int destIP = MessageUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
-        byte datalen = bytes[9];
+        int destinationIP = MessageUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
+        byte dataLength = bytes[9];
         byte[] information = Arrays.copyOfRange(bytes, 10, bytes.length - 2);
 
-        MessageData message = new MessageData(nextIP, datalen, information);
+        MessageData message = new MessageData(nextIP, dataLength, information);
         message.setSrcIP(srcIP);
-        message.setDestIP(destIP);
+        message.setDestinationIP(destinationIP);
         message.setType(RouteProtocol.DATA);
 
         return message;

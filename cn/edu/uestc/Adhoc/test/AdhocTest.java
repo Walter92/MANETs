@@ -5,12 +5,7 @@ import cn.edu.uestc.Adhoc.entity.factory.AdhocNodeFactory;
 import cn.edu.uestc.Adhoc.entity.message.MessageData;
 import cn.edu.uestc.Adhoc.entity.message.MessageRREP;
 import cn.edu.uestc.Adhoc.entity.message.MessageRREQ;
-import cn.edu.uestc.Adhoc.entity.route.RouteEntry;
-import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import cn.edu.uestc.Adhoc.entity.systemInfo.SystemInfo;
 
 public class AdhocTest {
 
@@ -28,7 +23,7 @@ public class AdhocTest {
 
        final MessageRREP messageRREP = new MessageRREP(2,2,2,new SystemInfo(2,41911));
         messageRREP.setSrcIP(2);
-        messageRREP.setDestIP(1);
+        messageRREP.setDestinationIP(1);
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -45,13 +40,13 @@ public class AdhocTest {
 
 //        System.out.println(adhocNode);
         MessageRREQ messageRREQ = new MessageRREQ(3,4,5,new SystemInfo(3,32321));
-        messageRREQ.setDestIP(6);
+        messageRREQ.setDestinationIP(6);
         messageRREQ.setSrcIP(7);
         int conut=0;
 
         MessageData messageData = new MessageData(4,5,"hello".getBytes());
         messageData.setSrcIP(3);
-        messageData.setDestIP(2);
+        messageData.setDestinationIP(2);
         while(true) {
             try {
 //                conut++;

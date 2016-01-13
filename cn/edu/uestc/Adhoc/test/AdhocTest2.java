@@ -20,7 +20,7 @@ public class AdhocTest2 {
 //        Message messageRREP=new MessageRREP();
 //        messageRREP.setType(RouteProtocol.RREP);
 //        messageRREP.setSrcIP(adhocNode.getIp());
-//        messageRREP.setDestIP("def");
+//        messageRREP.setDestinationIP("def");
 //        new Thread(new SerialWriteThread(adhocNode.getOs(),messageRREP)).start();
         byte[] bytes = MessageUtils.IntToBytes(4323);
         System.out.println(Arrays.toString(bytes));

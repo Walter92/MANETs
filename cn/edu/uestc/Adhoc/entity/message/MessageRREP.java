@@ -2,7 +2,7 @@ package cn.edu.uestc.Adhoc.entity.message;
 
 
 import cn.edu.uestc.Adhoc.entity.route.RouteProtocol;
-import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
+import cn.edu.uestc.Adhoc.entity.systemInfo.SystemInfo;
 import cn.edu.uestc.Adhoc.utils.MessageUtils;
 
 public class MessageRREP extends Message {
@@ -65,14 +65,14 @@ public class MessageRREP extends Message {
     public byte[] getBytes() {
         byte[] srcByte = MessageUtils.IntToBytes(getSrcIP());
         byte[] routeByte = MessageUtils.IntToBytes(routeIP);
-        byte[] destByte = MessageUtils.IntToBytes(getDestIP());
+        byte[] destinationByte = MessageUtils.IntToBytes(getDestinationIP());
         byte[] sysByte = systemInfo.getBytes();
         byte[] messageByte = {
                 RouteProtocol.frameHeader[0], RouteProtocol.frameHeader[1],//帧头,0,1
                 RouteProtocol.RREP,//数据类型,2
                 srcByte[0], srcByte[1],//源节点,3,4
                 routeByte[0], routeByte[1],//转发节点,5,6
-                destByte[0], destByte[1],//目标节点7,8
+                destinationByte[0], destinationByte[1],//目标节点7,8
                 (byte) seqNum,//序列号,9
                 (byte) hop,//跳数,10
                 sysByte[0], sysByte[1],sysByte[2],//系统信息,11,12,13
@@ -86,14 +86,14 @@ public class MessageRREP extends Message {
         ///恢复byte数组中的数据
         int srcIP = MessageUtils.BytesToInt(new byte[]{bytes[3], bytes[4]});
         int routeIP = MessageUtils.BytesToInt(new byte[]{bytes[5], bytes[6]});
-        int destIP = MessageUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
+        int destinationIP = MessageUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
         byte seqNum = bytes[9];
         byte hop = bytes[10];
         SystemInfo sysInfo = SystemInfo.recoverSysInfo(new byte[]{bytes[11], bytes[12],bytes[13]});
 
         MessageRREP message = new MessageRREP(routeIP, hop, seqNum, sysInfo);
         message.setSrcIP(srcIP);
-        message.setDestIP(destIP);
+        message.setDestinationIP(destinationIP);
         message.setType(RouteProtocol.RREP);
         return message;
     }

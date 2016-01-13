@@ -1,6 +1,6 @@
 package cn.edu.uestc.Adhoc.entity.route;
 
-import cn.edu.uestc.Adhoc.entity.systeminfo.SystemInfo;
+import cn.edu.uestc.Adhoc.entity.systemInfo.SystemInfo;
 
 
 /**
@@ -120,7 +120,7 @@ public class RouteEntry {
     @Override
     public String toString() {
         return "RouteEntry{" +
-                "destIP=" + destIP +
+                "destinationIP=" + destIP +
                 ", seqNum=" + seqNum +
                 ", state=" + state +
                 ", hopCount=" + hopCount +
