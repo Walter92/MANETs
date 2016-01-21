@@ -47,7 +47,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     private Map<Integer, RouteEntry> routeTable =  new ConcurrentHashMap<Integer, RouteEntry>();
 
     //先驱列表，存储了本节点周围的节点地址，其存在的目的主要用于路由维护
-    private HashSet<Integer> precursorIPs = (HashSet<Integer>)Collections.synchronizedCollection(new HashSet<Integer>());
+    private HashSet<Integer> precursorIPs = new HashSet<Integer>();
 
     //接收到的hello报文的发送者队列，当收到某hello报文时将其加入到队列中，路由维护线程从对列中取出数据，用于更新路由表项的生存时间
     private Queue<Integer> helloMessagesQueue = new ArrayDeque<Integer>();
@@ -70,7 +70,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         this.ip = ip;
     }
 
-    public AdhocTransfer getSerial() {
+    public AdhocTransfer getAdhocTransfer() {
         return this.adhocTransfer;
     }
 
@@ -96,7 +96,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         //节点对串口进行监听
         adhocTransfer.addReceiveListener(this);
         System.out.println("节点监听串口状态...");
-        adhocTransfer.recieve();
+        adhocTransfer.receive();
         System.out.println("节点接收线程开启，等待数据到来...");
     }
 
@@ -214,6 +214,13 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     }
 
     //在数据类型方法解析后调用，开始解析数据中内容，判断是否为发送给自己的RREP
+    /**
+     *
+     * 目前处理RREP的方式和RREQ一样，都是广播发送，然后再判断处理。
+     * RREP应该按照反向路径回复路由，采用单播的方式发送（暂未实现）
+     * @param messageRREP
+     *
+     */
     @Override
     public void receiveRREP(MessageRREP messageRREP) {
         System.out.println("节点" + ip + "收到节点" + messageRREP.getSrcIP()
@@ -350,6 +357,10 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         //查询本节点的路由表，得到去往目的节点的下一跳节点，并改变消息中的下一跳节点地址后转发出去
         int next = queryRouteTable(destinationIP).getNextHopIP();
         messageData.setNextIP(next);
+
+        /**
+         * 还要完成的一件事就是在转之前检查SystemInfo，如果本机的SystemInfo评分低于message中的，需要将其重置
+         */
         forwardDATA(messageData);
     }
 
@@ -381,7 +392,11 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     //将接收到的hello报文的源节点IP加入到队列中
     public void helloHandler(Message message){
         int srdIP = message.getSrcIP();
-        helloMessagesQueue.add(srdIP);
+        //保证线程安全
+        synchronized (helloMessagesQueue)
+        {
+            helloMessagesQueue.add(srdIP);
+        }
     }
 
 
@@ -389,6 +404,8 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     //路由表维护函数，根据helloIP队列中的IP来维护路由表，在一定时间内没有收到某一节节点的hello报文，则将以该节点为下一中转节点的路由表
     //可用状态设置为不可用，并发送RRER
     public void maintainRouteTable(){
+
+        //路由表维护线程，匿名内部类
         Thread maintainRouteThread = new Thread(new Runnable() {
             //路由维护线程
             @Override
@@ -398,7 +415,12 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
                 Iterator<Integer> it;
                 while(true){
                     if(helloMessagesQueue.size()>0){
-                        ip1 = helloMessagesQueue.remove();
+                        //移除操作，保证线程安全
+                        synchronized (helloMessagesQueue)
+                        {
+                            ip1 = helloMessagesQueue.remove();
+                        }
+
                         if(ip1!=0){
                                 DestinationSet = getDestinationIPByNextIP(ip1);
                                 it = DestinationSet.iterator();

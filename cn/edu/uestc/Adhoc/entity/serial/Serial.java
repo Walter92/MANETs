@@ -174,7 +174,7 @@ public class Serial implements AdhocTransfer{
 
     @Override
     //串口对象的读方法
-    public void recieve() {
+    public void receive() {
         Runnable reader = new SerialReadThread(this);
         executorService.submit(reader);
     }

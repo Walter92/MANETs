@@ -4,6 +4,7 @@ import cn.edu.uestc.Adhoc.entity.message.Message;
 import cn.edu.uestc.Adhoc.entity.serial.Serial;
 
 import java.io.*;
+import java.util.Arrays;
 
 public class SerialWriteThread implements Runnable {
 
@@ -24,7 +25,9 @@ public class SerialWriteThread implements Runnable {
 //        System.out.println("开始发送数据...");
 //        while (true) {
             try {
-                bos.write(message.getBytes());
+                byte[] bytes=message.getBytes();
+//                System.out.println("发送数据::"+ Arrays.toString(bytes));
+                bos.write(bytes);
 //                bos.write("hello world...".getBytes());
                 bos.flush();
                 Thread.sleep(1000);

@@ -20,9 +20,9 @@ public class MessageData extends Message {
     public MessageData() {
     }
 
-    public MessageData(int nextIP, int dataLen, byte[] content) {
+    public MessageData(int nextIP,  byte[] content) {
         this.nextIP = nextIP;
-        this.dataLen = dataLen;
+        this.dataLen = content.length;
         this.content = content;
     }
 
@@ -87,7 +87,7 @@ public class MessageData extends Message {
         byte dataLength = bytes[9];
         byte[] information = Arrays.copyOfRange(bytes, 10, bytes.length - 2);
 
-        MessageData message = new MessageData(nextIP, dataLength, information);
+        MessageData message = new MessageData(nextIP,  information);
         message.setSrcIP(srcIP);
         message.setDestinationIP(destinationIP);
         message.setType(RouteProtocol.DATA);

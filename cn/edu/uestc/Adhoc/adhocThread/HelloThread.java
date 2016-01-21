@@ -19,7 +19,7 @@ public class HelloThread implements Runnable{
 
     public HelloThread(AdhocNode adhocNode){
         this.adhocNode=adhocNode;
-        this.os=adhocNode.getSerial().getOs();
+        this.os=adhocNode.getAdhocTransfer().getOs();
     }
 
 

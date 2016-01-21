@@ -8,11 +8,12 @@ import java.io.OutputStream;
 import java.util.EventListener;
 
 /**
- * Created by walter on 15-12-21.
+ *
  * adhoc 的传输层接口，实现该接口可以为adhoc节点提供传输
+ *
  */
 public interface AdhocTransfer {
-    void recieve();
+    void receive();
     void send(Message message) throws IOException;
     void addReceiveListener(EventListener listener);
     byte[] getMessage();
