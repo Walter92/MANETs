@@ -89,8 +89,8 @@ public class SerialReadThread implements Runnable, SerialPortEventListener {
                         //将数组合并，把bytes的内容追加到buff
                         System.arraycopy(bytes, 0, buff, lengthOfBuff, bytes.length);
 
-//                        System.out.println("收到数据:" + Arrays.toString(bytes));
-//                        System.out.println("Buff::::" + Arrays.toString(buff));
+                        System.out.println("收到数据:" + Arrays.toString(bytes));
+                        System.out.println("Buff::::" + Arrays.toString(buff));
                         if (buff[0] == RouteProtocol.frameHeader[0] && buff[1] == RouteProtocol.frameHeader[1]) {
 //                            System.out.println("帧头校验成功！");
                             lengthOfBuff = buff.length;

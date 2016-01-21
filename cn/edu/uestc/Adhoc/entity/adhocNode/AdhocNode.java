@@ -98,6 +98,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         System.out.println("节点监听串口状态...");
         adhocTransfer.receive();
         System.out.println("节点接收线程开启，等待数据到来...");
+        System.out.println("========================");
     }
 
     //当串口中数据被更新后执行的方法
@@ -117,6 +118,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         messageRREQ.setType(RouteProtocol.RREQ);
         messageRREQ.setRouteIP(ip);
         messageRREQ.setRouteIP(destinationIP);
+        messageRREQ.setDestinationIP(destinationIP);
         messageRREQ.setSeqNum(seqNum++);
         messageRREQ.setSrcIP(ip);
         messageRREQ.setSystemInfo(systemInfo);
@@ -268,24 +270,25 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     @Override
     public void dataParsing(byte[] bytes) {
         byte type = bytes[2];
-        Message message = null;
+        //Message message = null;
         //如果是数据类型则恢复为数据MessageData，并且交给数据类型接收方法
         if (type == RouteProtocol.DATA) {
-            message = MessageData.recoverMsg(bytes);
-            receiveDATA((MessageData) message);
+            MessageData message = MessageData.recoverMsg(bytes);
+            System.out.println(message);
+            receiveDATA(message);
         }
         //如果是路由回复类型则恢复为数据MessageRREP，并且交给数据类型接收方法
         else if (type == RouteProtocol.RREP) {
-            message = MessageRREP.recoverMsg(bytes);
-            receiveRREP((MessageRREP) message);
+          MessageRREP  message = MessageRREP.recoverMsg(bytes);
+            receiveRREP(message);
         }
         //如果是路由请求类型则恢复为数据MessageRREQ，并且交给数据类型接收方法
         else if(type==RouteProtocol.RREQ){
-            message = MessageRREQ.recoverMsg(bytes);
-            receiveRREQ((MessageRREQ) message);
+            MessageRREQ message = MessageRREQ.recoverMsg(bytes);
+            receiveRREQ(message);
         }else if(type==RouteProtocol.HELLO){
             //交给处理hello报文的处理函数
-            message = MessageHello.recoverMsg(bytes);
+            MessageHello message = MessageHello.recoverMsg(bytes);
             helloHandler(message);
         }else {
             System.out.println("无效数据格式!!");
@@ -321,11 +324,9 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
             }
         }
         //如果路由表中有可用路由则可以向其发送数据
-        MessageData messageData = new MessageData();
-        messageData.setDestinationIP(destinationIP);
+        MessageData messageData = new MessageData(destinationIP,context.getBytes());
         messageData.setSrcIP(ip);
         messageData.setNextIP(routeEntry.getNextHopIP());
-        messageData.setContent(context.getBytes());
         try {
             adhocTransfer.send(messageData);
             System.out.println("数据发送成功!");
@@ -338,11 +339,6 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
     public void receiveDATA(MessageData messageData) {
         //收到数据类型的信息时不需要检查序列号
         int nextIP = messageData.getNextIP();
-        if (nextIP != ip){
-            System.out.println("本节点收到节点"+messageData.getSrcIP()+"发往节点"+messageData.getDestinationIP()
-                    +"的数据！我不是中转节点，抛弃！");
-            return;
-        }
 
         int destinationIP = messageData.getDestinationIP();
         if (destinationIP == ip) {
@@ -350,6 +346,14 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
                     + "的数据，" + "内容为：" + new String(messageData.getContent()));
             return;
         }
+
+        if (nextIP != ip){
+            System.out.println("本节点收到节点"+messageData.getSrcIP()+"发往节点"+messageData.getDestinationIP()
+                    +"的数据！我不是中转节点，抛弃！");
+            return;
+        }
+
+
 
         System.out.println("本节点收到节点"+messageData.getSrcIP()+"发往节点"+messageData.getDestinationIP()
                 +"的数据！我是中转节点，处理中！");

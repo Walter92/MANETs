@@ -20,8 +20,8 @@ public class MessageData extends Message {
     public MessageData() {
     }
 
-    public MessageData(int nextIP,  byte[] content) {
-        this.nextIP = nextIP;
+    public MessageData(int destinationIP,  byte[] content) {
+        this.destinationIP = destinationIP;
         this.dataLen = content.length;
         this.content = content;
     }
@@ -76,6 +76,15 @@ public class MessageData extends Message {
         messageByte[len - 2] = RouteProtocol.frameEnd[0];
         messageByte[len - 1] = RouteProtocol.frameEnd[1];//帧尾
         return messageByte;
+    }
+
+    @Override
+    public String toString() {
+        return "MessageData{" +
+                "nextIP=" + nextIP +
+                ", dataLen=" + dataLen +
+                ", content=" + new String(content) +
+                '}';
     }
 
     //将byte数组转化为Message对象
