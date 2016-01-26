@@ -85,10 +85,13 @@ public class MessageRREP extends Message {
     public static MessageRREP recoverMsg(byte[] bytes) {
         ///恢复byte数组中的数据
         int srcIP = MessageUtils.BytesToInt(new byte[]{bytes[3], bytes[4]});
+
         int routeIP = MessageUtils.BytesToInt(new byte[]{bytes[5], bytes[6]});
         int destinationIP = MessageUtils.BytesToInt(new byte[]{bytes[7], bytes[8]});
+
         byte seqNum = bytes[9];
         byte hop = bytes[10];
+
         SystemInfo sysInfo = SystemInfo.recoverSysInfo(new byte[]{bytes[11], bytes[12],bytes[13]});
 
         MessageRREP message = new MessageRREP(routeIP, hop, seqNum, sysInfo);

@@ -17,6 +17,7 @@ public class SerialPortEvent extends EventObject {
         super(source);
         this.obj=source;
     }
+
     public Object getSource()
     {
         return obj;

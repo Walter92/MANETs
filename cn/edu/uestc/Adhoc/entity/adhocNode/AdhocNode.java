@@ -274,7 +274,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
         //如果是数据类型则恢复为数据MessageData，并且交给数据类型接收方法
         if (type == RouteProtocol.DATA) {
             MessageData message = MessageData.recoverMsg(bytes);
-            System.out.println(message);
+          //  System.out.println(message);
             receiveDATA(message);
         }
         //如果是路由回复类型则恢复为数据MessageRREP，并且交给数据类型接收方法

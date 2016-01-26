@@ -60,13 +60,18 @@ public class MessageData extends Message {
         byte[] messageByte = new byte[len];
         messageByte[0] = RouteProtocol.frameHeader[0];
         messageByte[1] = RouteProtocol.frameHeader[1];//帧头,0,1
+
         messageByte[2] = RouteProtocol.DATA;//数据类型,2
+
         messageByte[3] = srcByte[0];
         messageByte[4] = srcByte[1];//源节点,3,4
+
         messageByte[5] = nextByte[0];
         messageByte[6] = nextByte[1];//转发节点,5,6
+
         messageByte[7] = destinationByte[0];
         messageByte[8] = destinationByte[1];//目标节点7,8
+
         messageByte[9] = (byte) dataLen;
         //待发送的字节数组
         for (int i = 10; i < len - 2; i++) {
@@ -98,6 +103,7 @@ public class MessageData extends Message {
 
         MessageData message = new MessageData(nextIP,  information);
         message.setSrcIP(srcIP);
+        message.setDataLen(dataLength);
         message.setDestinationIP(destinationIP);
         message.setType(RouteProtocol.DATA);
 
