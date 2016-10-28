@@ -13,8 +13,11 @@ import java.util.EventListener;
  *
  */
 public interface AdhocTransfer {
+    //接收信息
     void receive();
+    //发送一种数据类型的信息
     void send(Message message) throws IOException;
+    //添加信息监听器
     void addReceiveListener(EventListener listener);
     byte[] getMessage();
     void setMessage(byte[] message);

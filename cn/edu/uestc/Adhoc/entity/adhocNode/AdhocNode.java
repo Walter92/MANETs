@@ -311,7 +311,7 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
                     if (routeEntry == null) {
                         if(i==POLLING_COUNT){
                             System.out.println("寻找路由失败！");
-                            System.exit(1);
+                            //System.exit(1);
                         }
                         continue;
                     }else{
@@ -323,15 +323,18 @@ public class AdhocNode implements IAdhocNode, SerialPortListener {
                 e.printStackTrace();
             }
         }
-        //如果路由表中有可用路由则可以向其发送数据
-        MessageData messageData = new MessageData(destinationIP,context.getBytes());
-        messageData.setSrcIP(ip);
-        messageData.setNextIP(routeEntry.getNextHopIP());
-        try {
-            adhocTransfer.send(messageData);
-            System.out.println("数据发送成功!");
-        } catch (IOException e) {
-            System.out.println("数据发送失败!");
+        routeEntry = queryRouteTable(destinationIP);
+        if(routeEntry != null) {
+            //如果路由表中有可用路由则可以向其发送数据
+            MessageData messageData = new MessageData(destinationIP, context.getBytes());
+            messageData.setSrcIP(ip);
+            messageData.setNextIP(routeEntry.getNextHopIP());
+            try {
+                adhocTransfer.send(messageData);
+                System.out.println("数据发送成功!");
+            } catch (IOException e) {
+                System.out.println("数据发送失败!");
+            }
         }
     }
 
